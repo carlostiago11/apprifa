@@ -1,0 +1,60 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: apprifa-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: apprifa
+      MYSQL_USER: apprifa
+      MYSQL_PASSWORD: apprifa123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  mysql-test:
+    image: mysql:8.4
+    container_name: apprifa-mysql-test
+    restart: unless-stopped
+    profiles: ["test"]
+    environment:
+      MYSQL_DATABASE: apprifa_test
+      MYSQL_USER: apprifa_test
+      MYSQL_PASSWORD: apprifa_test123
+      MYSQL_ROOT_PASSWORD: root123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_test_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: apprifa-app
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/app/uploads
+
+  app-test:
+    build: .
+    container_name: apprifa-app-test
+    restart: unless-stopped
+    profiles: ["test"]
+    depends_on:
+      - mysql-test
+    env_file:
+      - .env.test
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  mysql_data:
+  mysql_test_data:

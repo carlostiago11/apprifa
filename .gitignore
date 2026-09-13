@@ -35,6 +35,9 @@ temp/
 *.bak
 *.swp
 
+# Local GitHub Actions runner and installer
+actions-runner/
+
 # Local Python environment
 .venv/
 __pycache__/

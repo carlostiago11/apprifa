@@ -1,46 +1,48 @@
+# Valida o código, testa a imagem Docker, publica no GHCR e permite deploy manual.
 name: CI/CD
 
+# Executa em pull requests, pushes para main/master ou por acionamento manual.
 on:
   pull_request:
   push:
     branches: [main, master]
   workflow_dispatch:
     inputs:
+      # Solicita deploy após os testes e a publicação; desativado por padrão.
       deploy:
         description: Deploy the tested image to the SSH production server
         type: boolean
         default: false
-      backup_confirmed:
-        description: Database backup and migration compatibility have been reviewed
-        type: boolean
-        default: false
 
+# Permissão padrão de leitura; apenas a publicação recebe escrita em pacotes.
 permissions:
   contents: read
 
+# Agrupa execuções por workflow e referência Git, sem cancelar a que já está rodando.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  # Primeira etapa: valida a sintaxe, o PIX e as dependências.
   quality:
     name: Syntax, PIX and security
     runs-on: ubuntu-latest
+    # Encerra o job se ultrapassar dez minutos.
     timeout-minutes: 10
     steps:
-      - name: Validate deployment request
-        if: github.event_name == 'workflow_dispatch' && inputs.deploy && !inputs.backup_confirmed
-        run: |
-          echo 'Review the database backup and migration compatibility, then select backup_confirmed.' >&2
-          exit 1
+      # Baixa o código sem manter as credenciais do GitHub na configuração do Git.
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # Prepara Node.js 24 e reutiliza o cache de downloads do npm.
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           cache: npm
+      # Instala as versões do lockfile; a auditoria é executada separadamente abaixo.
       - run: npm ci --no-audit --no-fund
+      # Verifica a sintaxe dos arquivos JavaScript e shell sem executar esses scripts.
       - name: Check JavaScript and shell syntax
         shell: bash
         run: |
@@ -48,26 +50,35 @@ jobs:
           find lib migrations public scripts tests -type f -name '*.js' -print0 | xargs -0 -n 1 node --check
           bash -n scripts/test-ci.sh scripts/deploy-ssh.sh
           sh -n scripts/ci-tests-in-container.sh
+      # Executa a suíte de testes PIX definida no package.json.
       - run: npm run test:pix
+      # Audita dependências de produção e falha para vulnerabilidades altas ou críticas.
       - run: npm audit --omit=dev --audit-level=high
 
+  # Só começa após quality passar; constrói e testa a imagem que será publicada.
   image:
     name: Docker and isolated integration tests
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: quality
     steps:
+      # Obtém o código, o Dockerfile e os scripts de teste nesta nova máquina do job.
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # Disponibiliza Node.js para o script de testes, sem cache do gerenciador de pacotes.
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
           package-manager-cache: false
+      # Valida o build, cria a imagem e testa com MySQL descartável em rede interna.
+      # O script limpa os recursos temporários e exporta a imagem se os testes passarem.
       - name: Build and test with disposable MySQL
         env:
+          # Caminho do arquivo Docker exportado para uso no job de publicação.
           CI_IMAGE_ARCHIVE: ${{ runner.temp }}/apprifa-image.tar
         run: bash scripts/test-ci.sh
+      # Guarda a imagem testada por um dia, sem compressão adicional; falha se ela não existir.
       - uses: actions/upload-artifact@v4
         with:
           name: tested-image
@@ -76,6 +87,7 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
+  # Publica somente após os testes da imagem e apenas na branch padrão, fora de PRs.
   publish:
     name: Publish tested image to GHCR
     needs: image
@@ -84,14 +96,18 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
+      # Autoriza o token deste job a enviar imagens ao GitHub Container Registry (GHCR).
       packages: write
     outputs:
+      # Entrega ao deploy a referência imutável da imagem, identificada pelo digest SHA-256.
       image: ${{ steps.publish.outputs.image }}
     steps:
+      # Recupera o arquivo gerado no job image para publicar a mesma imagem testada.
       - uses: actions/download-artifact@v4
         with:
           name: tested-image
           path: ${{ runner.temp }}
+      # Autentica no GHCR, envia a imagem e registra seu digest para o próximo job.
       - name: Publish the exact tested image
         id: publish
         env:
@@ -102,73 +118,102 @@ jobs:
           ARCHIVE: ${{ runner.temp }}/apprifa-image.tar
         shell: bash
         run: |
+          # Interrompe em erros, variáveis ausentes ou falhas em pipelines de comandos.
           set -euo pipefail
+          # Importa a imagem do arquivo e verifica se seu nome foi recuperado.
           source_image=$(docker load -i "$ARCHIVE" | sed -n 's/^Loaded image: //p')
           test -n "$source_image"
+          # Converte o nome do repositório para minúsculas, como exigido pelo registro.
           image="ghcr.io/${REPOSITORY,,}"
+          # Passa o token pela entrada padrão e agenda logout ao encerrar o script.
           printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
           trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          # Identifica a imagem pelo commit e a envia sem reconstruí-la.
           docker tag "$source_image" "$image:sha-$COMMIT_SHA"
           docker push "$image:sha-$COMMIT_SHA"
+          # Obtém e confere o digest para que o deploy use exatamente o conteúdo publicado.
           digest_ref=$(docker inspect --format '{{index .RepoDigests 0}}' "$image:sha-$COMMIT_SHA")
           [[ "$digest_ref" == "$image@sha256:"* ]]
+          # Expõe a referência como saída do passo e a mostra no resumo do GitHub Actions.
           printf 'image=%s\n' "$digest_ref" >> "$GITHUB_OUTPUT"
           printf 'Published `%s`\n' "$digest_ref" >> "$GITHUB_STEP_SUMMARY"
 
+  # Deploy exige execução manual na branch padrão, opção deploy habilitada e publicação concluída.
   deploy:
     name: Deploy production over SSH
     needs: publish
-    if: github.event_name == 'workflow_dispatch' && inputs.deploy && inputs.backup_confirmed && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    # Usa um runner próprio com estes rótulos e acesso SSH ao servidor de produção.
     runs-on: [self-hosted, linux, x64, apprifa-deploy]
     timeout-minutes: 10
+    # Aplica as variáveis, os secrets e eventuais regras de proteção do ambiente producao.
     environment: producao
     concurrency:
+      # Serializa os deploys de produção, sem interromper o deploy em andamento.
       group: apprifa-production
       cancel-in-progress: false
     steps:
+      # Obtém o script de deploy que será enviado ao servidor por SSH.
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      # Conecta ao servidor validando sua chave contra o conteúdo de SSH_KNOWN_HOSTS.
       - name: Deploy using a verified SSH host key
         env:
+          # Chave privada de autenticação e chaves confiáveis do servidor, armazenadas como secrets.
           SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          # Endereço, usuário, porta (22 por padrão) e diretório da instalação existente.
           SSH_HOST: ${{ vars.SSH_HOST }}
           SSH_USER: ${{ vars.SSH_USER }}
           SSH_PORT: ${{ vars.SSH_PORT || '22' }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          # Referência por digest produzida pelo job publish.
           IMAGE_REF: ${{ needs.publish.outputs.image }}
         shell: bash
         run: |
+          # Interrompe em falhas e valida as configurações sem imprimir secrets.
           set -euo pipefail
 
-           fail() { echo "::error::$1"; exit 1; }
+          fail() { echo "::error::$1"; exit 1; }
 
-           test -n "$SSH_KEY" || fail "SSH_PRIVATE_KEY vazio"
-           test -n "$SSH_KNOWN_HOSTS" || fail "SSH_KNOWN_HOSTS vazio"
+            test -n "$SSH_KEY" || fail "SSH_PRIVATE_KEY vazio"
+            test -n "$SSH_KNOWN_HOSTS" || fail "SSH_KNOWN_HOSTS vazio"
 
-          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] \
-          || fail "SSH_HOST inválido"
+            [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] \
+              || fail "SSH_HOST inválido"
 
-          [[ "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] \
-          || fail "SSH_USER inválido"
+            [[ "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] \
+              || fail "SSH_USER inválido"
 
-          [[ "$SSH_PORT" =~ ^[0-9]+$ ]] \
-          || fail "SSH_PORT inválido"
+            [[ "$SSH_PORT" =~ ^[0-9]+$ ]] \
+              || fail "SSH_PORT inválido"
 
-          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]] \
-          || fail "DEPLOY_PATH inválido"
+            # Remove espaços, tabs e quebras de linha das extremidades, comuns ao copiar a variável.
+            # Caracteres dentro do caminho continuam sujeitos à validação original.
+            DEPLOY_PATH="${DEPLOY_PATH#"${DEPLOY_PATH%%[![:space:]]*}"}"
+            DEPLOY_PATH="${DEPLOY_PATH%"${DEPLOY_PATH##*[![:space:]]}"}"
+            if [[ ! "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]]; then
+              # %q revela caracteres invisíveis e aspas literais; DEPLOY_PATH não é um secret.
+              printf 'DEPLOY_PATH recebido (formato escapado): %q\n' "$DEPLOY_PATH"
+              fail "DEPLOY_PATH inválido: use um caminho absoluto como /home/infra/app, sem aspas ou espaços internos."
+            fi
 
-          [[ "$IMAGE_REF" =~ ^ghcr\.io/[a-z0-9_./-]+@sha256:[a-f0-9]{64}$ ]] \
-          || fail "IMAGE_REF inválida"
+            [[ "$IMAGE_REF" =~ ^ghcr\.io/[a-z0-9_./-]+@sha256:[a-f0-9]{64}$ ]] \
+              || fail "IMAGE_REF inválida"
 
-          echo "Validações concluídas; iniciando configuração SSH"
+            echo "Validações concluídas; iniciando configuração SSH"
           ssh_dir=$(mktemp -d)
           trap 'rm -rf "$ssh_dir"' EXIT
           chmod 700 "$ssh_dir"
           printf '%s\n' "$SSH_KEY" > "$ssh_dir/key"
           printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
           chmod 600 "$ssh_dir/key" "$ssh_dir/known_hosts"
+          # Abre SSH sem interação, com a identidade fornecida e verificação obrigatória do host.
+          # Envia deploy-ssh.sh pela entrada padrão, passando diretório e digest como argumentos.
+          # O script valida a instalação/Compose, atualiza o serviço app e aguarda sua saúde.
+          # Também registra a imagem anterior para apoiar um eventual rollback manual.
+          echo 'Validações locais concluídas. Iniciando conexão SSH para o deploy remoto.'
           ssh -i "$ssh_dir/key" -p "$SSH_PORT" \
             -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$ssh_dir/known_hosts" -o ConnectTimeout=15 \

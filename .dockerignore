@@ -1,0 +1,39 @@
+node_modules
+npm-debug.log
+.git
+.gitignore
+Dockerfile
+docker-compose.yml
+.env
+README.md
+
+.env.*
+!.env.example
+
+# Local Python environment
+.venv/
+__pycache__/
+
+# Local integration-test attempts
+tmp/
+
+# Local tools, user data and files not required by the runtime
+.agents/
+.codex/
+.vscode/
+uploads/
+tests/
+scripts/
+docker-compose*.yml
+*.md
+*.log
+*.key
+*.pem
+*.p12
+*.pfx
+.github/
+.deploy.lock
+.deploy-image.*.yml
+.deployed-image*
+.previous-image
+.rollback-image.yml

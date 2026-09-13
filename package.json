@@ -1,0 +1,31 @@
+{
+  "name": "apprifa",
+  "version": "1.0.0",
+  "description": "Rifa app with Docker, MySQL and payment API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test:api": "node --test tests/api.test.js",
+    "test:api:isolated": "bash scripts/test-api-isolated.sh",
+    "test:ci": "bash scripts/test-ci.sh",
+    "test:pix": "node --test tests/pix.test.js",
+    "test:pix:isolated": "bash scripts/test-pix-isolated.sh",
+    "check:mercadopago": "node scripts/check-mercadopago.js",
+    "validate:mercadopago": "bash scripts/validate-mercadopago.sh",
+    "test:mercadopago:account": "node scripts/test-mercadopago-account.js",
+    "test:mercadopago:orders": "node scripts/test-mercadopago-orders.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mercadopago": "^3.6.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.0",
+    "pdfkit": "^0.17.2",
+    "sequelize": "^6.37.3",
+    "stripe": "^16.9.0"
+  }
+}

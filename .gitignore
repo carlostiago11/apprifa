@@ -1,0 +1,47 @@
+# Environment
+.env
+.env.*
+!.env.example
+node_modules/
+uploads/
+
+# Secrets
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# Kubernetes secrets
+*-secret.yaml
+secret.yaml
+secrets.yaml
+
+# Logs
+*.log
+logs/
+
+# VS Code local
+.vscode/settings.local.json
+
+# Temporary
+tmp/
+temp/
+*.bak
+*.swp
+
+# Local Python environment
+.venv/
+__pycache__/
+
+# Deployment state belongs to the server
+.deploy.lock
+.deploy-image.*.yml
+.deployed-image*
+.previous-image
+.rollback-image.yml

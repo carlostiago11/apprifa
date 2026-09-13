@@ -1,0 +1,2365 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aplicativo Rifa da Bueno Tecnologia</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --ink: #102035;
+      --card: rgba(255, 255, 255, 0.94);
+      --primary: #6d3df5;
+      --primary-dark: #5127cd;
+      --primary-soft: #eee9ff;
+      --accent: #18c6a3;
+      --accent-soft: #dffaf4;
+      --danger: #d9465f;
+      --line: #dfe4ec;
+      --entry-user-bg: #f5f2ff;
+      --entry-user-line: #cfc2ff;
+      --entry-admin-bg: #edfbf8;
+      --entry-admin-line: #a7eadc;
+      --shadow: 0 24px 70px rgba(4, 13, 27, 0.2);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: linear-gradient(90deg, rgba(239,244,255,.18), transparent 55%), url("/raffle-showcase-background.png?v=20260905-2") center / cover no-repeat, #cbdcff;
+      background-attachment: fixed;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, transparent 62%, rgba(230,237,250,.58));
+      pointer-events: none;
+      word-spacing: .35em;
+    }
+
+    body::after { content: none; }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 28px 54px;
+    }
+
+    .hidden { display: none !important; }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .hero {
+      display: flex;
+      gap: 24px;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 28px;
+      padding: 10px 12px 10px 10px;
+      border: 1px solid rgba(255,255,255,.72);
+      border-radius: 20px;
+      background: rgba(255,255,255,.6);
+      box-shadow: 0 16px 45px rgba(70,82,125,.12);
+      backdrop-filter: blur(18px);
+      color: white;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; min-width: 330px; }
+    .brand-mark { width: 46px; height: 46px; display: grid; place-items: center; border-radius: 15px; background: linear-gradient(145deg, #7d55ff, #5a2bd8); box-shadow: 0 10px 28px rgba(109, 61, 245, .4); }
+    .brand-mark svg { width: 27px; height: 27px; }
+    .brand-copy strong { display: block; color: #243351; font-size: 21px; font-weight: 850; line-height: 1.15; letter-spacing: -.025em; }
+    .main-nav { display: flex; align-items: center; gap: 5px; padding: 5px; border: 1px solid rgba(91,91,148,.12); border-radius: 999px; background: rgba(255,255,255,.48); backdrop-filter: blur(16px); }
+    .nav-link { width: auto; margin: 0; padding: 9px 15px; border-radius: 999px; color: #5d6880; background: transparent; font-size: 13px; font-weight: 650; }
+    .nav-link:hover, .nav-link.active { color: #fff; background: var(--primary); }
+
+    h1, h2, h3 { margin: 0 0 8px; }
+    .muted { color: #5f6f6f; }
+
+    input, textarea, select, button {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      margin: 6px 0;
+      font-size: 15px;
+    }
+    input.tenant-locked { color: #526079; background: #eef1f7; border-color: #d4dae5; cursor: not-allowed; }
+
+    button {
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .16s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    button:hover { background: var(--primary-dark); }
+
+    button.alt {
+      background: #355d8a;
+    }
+
+    button.warn {
+      background: var(--danger);
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .grid3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .raffle-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: white;
+      cursor: pointer;
+      transition: transform .15s ease;
+    }
+
+    .raffle-card:hover { transform: translateY(-2px); }
+    .raffle-share-button { width: 100%; min-height: 40px; margin: 10px 0 0; padding: 9px 12px; border-radius: 10px; background: #102a43; font-size: 12px; }
+    .raffle-share-button:hover { background: #071827; }
+    .raffle-share-button.copied { background: #0a927a; }
+
+    .media-cover {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: #ebebeb;
+      display: block;
+    }
+
+    .card-body { padding: 12px; }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: #165b56;
+      font-weight: 700;
+    }
+
+    .numbers {
+      display: grid;
+      grid-template-columns: repeat(10, minmax(0, 1fr));
+      gap: 6px;
+      margin-top: 10px;
+      max-height: 380px;
+      overflow: auto;
+      padding: 4px;
+    }
+
+    .num {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      text-align: center;
+      padding: 7px 2px;
+      font-size: 13px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .num.on { background: #0d7a72; color: white; border-color: #0d7a72; }
+    .num.off { background: #f2b5b5; color: #6b1d1d; text-decoration: line-through; cursor: not-allowed; }
+
+    .media-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin: 10px 0;
+    }
+
+    .media-grid img,
+    .media-grid video {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: #f1f1f1;
+      min-height: 120px;
+      object-fit: cover;
+    }
+
+    .winners {
+      border: 1px dashed #2a817a;
+      padding: 10px;
+      border-radius: 8px;
+      background: #e7f7f5;
+      margin: 10px 0;
+    }
+
+    .draw-info-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+    .draw-info-card { padding: 16px; border: 1px solid #cfc2ff; border-radius: 14px; background: #f7f5ff; }
+    .draw-info-card h3 { color: var(--primary-dark); }
+    .draw-info-card p { margin: 6px 0; }
+    .draw-close-card { border-color: #efc5a7; background: #fff8f1; }
+    .draw-close-button { margin-top: 10px; background: var(--danger); }
+    .draw-close-button:hover { background: #8d2727; }
+    .confirmation-dialog { width: min(92vw,460px); padding: 22px; border: 1px solid #d8d0f4; border-radius: 16px; color: var(--text); background: #fff; box-shadow: 0 24px 70px rgba(26,20,53,.3); }
+    .confirmation-dialog::backdrop { background: rgba(15,18,32,.62); backdrop-filter: blur(3px); }
+    .confirmation-dialog form { margin: 0; }
+    .confirmation-dialog label { display: block; margin-top: 14px; font-weight: 800; }
+    .confirmation-dialog .dialog-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .confirmation-error { display: block; min-height: 20px; color: var(--danger); font-weight: 700; }
+    @media (max-width: 720px) { .draw-info-grid { grid-template-columns: 1fr; } }
+
+    .winner-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 9px 0; }
+    .winner-row p { margin: 0; }
+    .shipping-label-button { width: auto; min-height: 34px; margin: 0; padding: 7px 11px; border-radius: 9px; font-size: 12px; }
+    .registration-address { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .registration-address h4 { margin: 0 0 6px; }
+    .custom-range-field { margin: 8px 0; padding: 13px; border: 1px solid #cfc2ff; border-radius: 12px; background: #f5f2ff; }
+    .custom-range-field label { display: block; margin-bottom: 3px; color: var(--primary-dark); font-size: 13px; font-weight: 800; }
+    .custom-range-field small { display: block; margin-top: 4px; color: #687588; }
+    .create-field-label { display: block; margin-top: 10px; color: var(--primary-dark); font-size: 13px; font-weight: 800; }
+    .create-field-help { display: block; margin: 0 0 10px; color: #687588; }
+    .share-link-field { margin: 14px 0; padding: 15px; border: 1px solid #cfc2ff; border-radius: 14px; background: #f7f5ff; }
+    .share-link-field label { display: block; margin-bottom: 7px; color: var(--primary-dark); font-size: 13px; font-weight: 800; }
+    .share-link-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; align-items: center; }
+    .share-link-row input { margin: 0; color: #40506a; background: #fff; }
+    .share-link-row button { width: auto; min-width: 120px; margin: 0; white-space: nowrap; }
+    .share-link-field small { display: block; margin-top: 7px; color: #687588; }
+    .share-link-feedback { color: #087d69 !important; font-weight: 750; }
+    .org-noc { padding: clamp(20px,3vw,30px); border: 1px solid #21364a; border-radius: 22px; color: #e8f0f7; background: linear-gradient(145deg,#091522,#0d1d2c); box-shadow: 0 24px 60px rgba(4,13,27,.28); }
+    .org-noc-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 20px; }
+    .org-noc-head h2 { margin: 4px 0 0; color: #fff; } .org-noc-kicker { color: #59e0bf; font-size: 10px; font-weight: 900; letter-spacing: .15em; }
+    .org-noc-status { padding: 8px 11px; border: 1px solid rgba(89,224,191,.25); border-radius: 999px; color: #75f1cd; background: rgba(89,224,191,.1); font-size: 10px; font-weight: 900; }
+    .org-noc-metrics { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 10px; }
+    .org-noc-metric { padding: 16px; border: 1px solid #21364a; border-radius: 13px; background: rgba(255,255,255,.035); }
+    .org-noc-metric span,.org-noc-metric small { display: block; color: #8193a6; } .org-noc-metric span { min-height: 28px; font-size: 10px; font-weight: 800; text-transform: uppercase; }
+    .org-noc-metric strong { display: block; margin: 7px 0 5px; color: #fff; font-size: clamp(17px,2vw,22px); white-space: nowrap; }
+    .org-noc-telemetry { display: flex; justify-content: space-between; gap: 12px; margin: 12px 0 24px; padding: 12px 14px; border: 1px solid #1d3245; border-radius: 10px; color: #8193a6; font: 10px ui-monospace,monospace; }
+    .org-noc-telemetry strong { color: #c1d0dc; } .org-noc-table-wrap { overflow-x: auto; border: 1px solid #203448; border-radius: 12px; }
+    .org-noc-table { width: 100%; min-width: 820px; border-collapse: collapse; color: #b8c7d4; font-size: 11px; }
+    .org-noc-table th,.org-noc-table td { padding: 12px 13px; border-bottom: 1px solid #203448; text-align: left; white-space: nowrap; }
+    .org-noc-table th { color: #71869a; font-size: 9px; text-transform: uppercase; } .org-noc-table tr:last-child td { border-bottom: 0; }
+    .org-financial-state { color: #ffd87a; font-weight: 800; text-transform: uppercase; } .org-financial-state.pago,.org-financial-state.approved { color: #59e0bf; }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .top-actions .muted { color: #53627b; font-size: 13px; }
+    .top-actions button { width: auto; padding-inline: 18px; }
+
+    .client-workspace-tabs {
+      display: flex;
+      gap: 6px;
+      width: fit-content;
+      margin-bottom: 16px;
+      padding: 6px;
+      border: 1px solid rgba(82,91,128,.16);
+      border-radius: 16px;
+      background: rgba(255,255,255,.78);
+      box-shadow: 0 12px 34px rgba(60,72,115,.13);
+      backdrop-filter: blur(14px);
+    }
+
+    .client-tab-button {
+      width: auto;
+      min-height: 42px;
+      margin: 0;
+      padding: 9px 18px;
+      border-radius: 11px;
+      color: #46536b;
+      background: transparent;
+      font-size: 13px;
+    }
+
+    .client-tab-button:hover,
+    .client-tab-button.active {
+      color: #fff;
+      background: var(--primary);
+      transform: none;
+      box-shadow: 0 8px 22px rgba(109,61,245,.28);
+    }
+    .client-tab-button:hover:not(.active) { color: var(--primary-dark); background: #eee9ff; box-shadow: none; }
+
+    .client-tab-panel > .panel:first-child { margin-bottom: 14px; }
+    .empty-raffles { grid-column: 1 / -1; padding: 34px 18px; border: 1px dashed #cbd2dc; border-radius: 14px; color: #687588; background: rgba(255,255,255,.55); text-align: center; }
+
+    #entry-view { position: relative; display: grid; grid-template-columns: minmax(0,1.08fr) minmax(420px,.92fr); gap: clamp(28px,4vw,58px); align-items: center; width: 100%; min-height: min(560px,calc(100vh - 145px)); overflow: hidden; padding: clamp(28px,3.5vw,46px); border-color: rgba(255,255,255,.78); background: linear-gradient(115deg,rgba(255,255,255,.88),rgba(246,247,255,.68)); box-shadow: 0 30px 90px rgba(72,72,125,.18); backdrop-filter: blur(14px); }
+    #entry-view::after { content: ""; position: absolute; inset: 0; border-radius: inherit; background: radial-gradient(circle at 78% 20%,rgba(117,76,255,.18),transparent 35%); pointer-events: none; }
+    .entry-intro, .entry-grid { position: relative; z-index: 1; }
+    .welcome-kicker { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 15px; padding: 7px 11px; border-radius: 999px; background: var(--primary-soft); color: var(--primary-dark); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .welcome-kicker::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px rgba(24, 198, 163, .14); }
+    #entry-view h2 { max-width: 690px; color: #25304b; font-size: clamp(38px,4.2vw,60px); line-height: .98; letter-spacing: -.055em; text-wrap: balance; }
+    #entry-view .entry-intro > .muted { max-width: 650px; margin: 18px 0 22px; color: #59657c; font-size: 16px; line-height: 1.55; }
+
+    .entry-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px;
+      margin-top: 0;
+    }
+
+    .entry-card {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fff;
+      padding: 20px;
+      box-shadow: 0 12px 30px rgba(16, 32, 53, 0.07);
+      display: flex;
+      flex-direction: column;
+      min-height: 270px;
+      transform: translateY(0) scale(1);
+      transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease, filter .2s ease;
+      animation: entryFloatIn .45s ease both;
+      outline: none;
+    }
+
+    .entry-card:nth-child(2) {
+      animation-delay: .08s;
+    }
+
+    .entry-card:hover {
+      transform: translateY(-6px) scale(1.01);
+      box-shadow: 0 22px 42px rgba(16, 32, 53, 0.13);
+      filter: saturate(1.05);
+    }
+
+    .entry-card.user {
+      background: linear-gradient(145deg, rgba(246,243,255,.97), rgba(255,255,255,.9));
+      border-color: rgba(207,194,255,.72);
+    }
+
+    .entry-card.admin {
+      background: linear-gradient(145deg, rgba(237,251,248,.97), rgba(255,255,255,.9));
+      border-color: rgba(167,234,220,.72);
+    }
+
+    .entry-kicker {
+      display: inline-block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--primary-dark);
+    }
+
+    .entry-card.admin .entry-kicker {
+      color: #087d69;
+    }
+
+    .entry-icon { width: 46px; height: 46px; display: grid; place-items: center; margin-bottom: 18px; border-radius: 14px; background: var(--primary); color: white; box-shadow: 0 9px 22px rgba(109, 61, 245, .25); }
+    .entry-card.admin .entry-icon { background: #0aa88e; box-shadow: 0 9px 22px rgba(10, 168, 142, .22); }
+    .entry-icon svg { width: 23px; height: 23px; }
+
+    .entry-card h3 {
+      margin-bottom: 8px;
+      font-size: 23px;
+      line-height: 1.2;
+    }
+
+    .entry-card .muted {
+      font-size: 15px;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .entry-card button {
+      margin-top: auto;
+      min-height: 46px;
+      border-radius: 13px;
+      transition: transform .14s ease, box-shadow .16s ease;
+    }
+
+    .entry-card button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(13, 122, 114, 0.25);
+    }
+
+    .entry-card.admin button.alt { background: #102a43; }
+    .entry-card.admin button.alt:hover { background: #071827; }
+    .trust-row { display: flex; flex-wrap: wrap; gap: 14px 18px; margin-top: 18px; color: #59657c; font-size: 13px; font-weight: 650; }
+    .trust-row span { display: inline-flex; align-items: center; gap: 7px; }
+    .trust-row span::before { content: "✓"; color: #07957d; font-weight: 900; }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 10px;
+      color: #355d8a;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .organizer-contact {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+
+    .organizer-contact p {
+      margin: 0 0 12px;
+      color: #53627b;
+      line-height: 1.5;
+    }
+
+    .whatsapp-contact-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      min-height: 48px;
+      padding: 11px 16px;
+      border-radius: 12px;
+      color: #fff;
+      background: #20b858;
+      box-shadow: 0 9px 22px rgba(32,184,88,.24);
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform .16s ease, background .2s ease, box-shadow .2s ease;
+    }
+
+    .whatsapp-contact-button:hover {
+      color: #fff;
+      background: #159447;
+      box-shadow: 0 12px 26px rgba(32,184,88,.3);
+      transform: translateY(-1px);
+    }
+
+    .whatsapp-contact-button svg { width: 25px; height: 25px; flex: 0 0 auto; }
+
+    .participant-auth-shell { max-width: 680px; margin: 0 auto; }
+    .participant-auth-panel > h3 { margin-bottom: 12px; }
+    .auth-switch-button { margin-top: 10px; color: var(--primary-dark); background: var(--primary-soft); }
+    .auth-switch-button:hover { color: #fff; background: var(--primary-dark); }
+    .pix-registration-notice { margin: 0 0 14px; padding: 13px 14px; border: 1px solid #b8ddd5; border-left: 4px solid #0aa88e; border-radius: 10px; color: #20524a; background: #edfbf8; line-height: 1.5; }
+    .pix-registration-notice strong { display: block; margin-bottom: 3px; color: #087d69; }
+
+    .stripe-card-box {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px;
+      background: #fff;
+      margin-top: 8px;
+    }
+
+    .status-note {
+      margin-top: 10px;
+      border: 1px dashed #d0b45b;
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff8df;
+      color: #53430d;
+      font-size: 14px;
+    }
+
+    .pix-copy-code {
+      display: block;
+      margin: 8px 0;
+      padding: 10px;
+      border: 1px solid #dfca82;
+      border-radius: 8px;
+      background: #fff;
+      overflow-wrap: anywhere;
+      user-select: all;
+      font: 12px/1.45 ui-monospace, monospace;
+    }
+
+    .pix-copy-feedback {
+      display: inline-block;
+      margin-left: 8px;
+      color: #087d69;
+      font-weight: 700;
+    }
+
+    .pix-failure-reason {
+      margin-top: 10px;
+      border: 1px solid #efb3b3;
+      border-left: 4px solid #c83e3e;
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff4f4;
+      color: #702323;
+      font-size: 14px;
+    }
+
+    .pix-failure-reason strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .checkout-summary {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .checkout-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .checkout-actions.single {
+      grid-template-columns: 1fr;
+    }
+
+    .entry-card:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible,
+    select:focus-visible,
+    .back-link:focus-visible {
+      outline: 3px solid #173f71;
+      outline-offset: 3px;
+    }
+
+    .entry-card.user:focus-visible,
+    .entry-card.user:focus-within {
+      border-color: #1f9b90;
+      box-shadow: 0 0 0 4px rgba(13, 122, 114, 0.18), 0 16px 28px rgba(17, 34, 34, 0.12);
+    }
+
+    .entry-card.admin:focus-visible,
+    .entry-card.admin:focus-within {
+      border-color: #3f72b0;
+      box-shadow: 0 0 0 4px rgba(53, 93, 138, 0.18), 0 16px 28px rgba(17, 34, 34, 0.12);
+    }
+
+    @keyframes entryFloatIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(.995);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .entry-card,
+      .entry-card button,
+      button,
+      .raffle-card {
+        animation: none !important;
+        transition: none !important;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .grid3, .grid2 { grid-template-columns: 1fr; }
+      .numbers { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+      .hero { flex-wrap: wrap; }
+      .main-nav { order: 3; width: 100%; justify-content: center; }
+      #entry-view { grid-template-columns: 1fr; width: 100%; min-height: auto; }
+      #entry-view h2 { font-size: clamp(38px,8vw,58px); line-height: 1.02; }
+      #entry-view .entry-intro > .muted { font-size: 16px; }
+      .entry-grid { grid-template-columns: 1fr; gap: 10px; }
+      .entry-card { min-height: 0; padding: 15px; }
+      .entry-card h3 { font-size: 22px; }
+      .entry-kicker { font-size: 11px; }
+      .checkout-actions { grid-template-columns: 1fr; }
+      .client-workspace-tabs { width: 100%; }
+      .client-tab-button { flex: 1; }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { padding: 16px 14px 36px; }
+      .hero { margin-bottom: 20px; }
+      .brand { min-width: 0; }
+      .brand-copy strong { max-width: 230px; font-size: 17px; }
+      .main-nav { overflow-x: auto; justify-content: flex-start; }
+      .nav-link { white-space: nowrap; padding-inline: 13px; }
+      #entry-view { padding: 26px 18px; border-radius: 20px; }
+      #entry-view h2 { font-size: 39px; }
+      #entry-view .entry-intro > .muted { font-size: 15px; }
+      .trust-row { gap: 10px 16px; }
+      .entry-card { padding: 19px; }
+      .client-workspace-tabs { overflow-x: auto; justify-content: flex-start; }
+      .client-tab-button { min-width: max-content; }
+      .share-link-row { grid-template-columns: 1fr; }
+      .share-link-row button { width: 100%; }
+      .org-noc-metrics { grid-template-columns: 1fr; }
+      .org-noc-head,.org-noc-telemetry { align-items: flex-start; flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div class="brand" aria-label="Aplicativo Rifa da Bueno Tecnologia">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v3a2.5 2.5 0 0 0 0 5v5a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5v-5a2.5 2.5 0 0 0 0-5v-3Z"/>
+            <path d="M9 8h6M9 12h6M9 16h3"/>
+          </svg>
+        </span>
+        <div class="brand-copy">
+          <strong>Aplicativo Rifa da Bueno Tecnologia</strong>
+        </div>
+      </div>
+      <nav class="main-nav" aria-label="Acessos principais">
+        <button class="nav-link active" type="button" data-nav-target="entry">Início</button>
+        <button class="nav-link" type="button" data-nav-target="user">Participante</button>
+        <button class="nav-link" type="button" data-nav-target="admin">Organizador</button>
+      </nav>
+      <div class="top-actions">
+        <span id="auth-user" class="muted"></span>
+        <button id="btn-logout" class="warn hidden">Sair</button>
+      </div>
+    </div>
+
+    <section id="entry-view" class="panel">
+      <div class="entry-intro">
+        <span class="welcome-kicker">Rifas digitais, simples e seguras</span>
+        <h2>Transforme prêmios em experiências que todo mundo quer viver.</h2>
+        <p class="muted">Crie, divulgue e acompanhe rifas em um só lugar. Uma plataforma completa para organizar campanhas, vender números, receber via PIX e realizar sorteios com praticidade e transparência.</p>
+        <div class="trust-row" aria-label="Recursos da plataforma">
+          <span>Pagamentos via PIX</span><span>Gestão centralizada</span><span>Sorteios transparentes</span>
+        </div>
+      </div>
+      <div class="entry-grid">
+        <div
+          class="entry-card user"
+          role="button"
+          tabindex="0"
+          data-entry-target="user"
+          aria-label="Abrir Área do Participante"
+        >
+          <span class="entry-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4.5 21a7.5 7.5 0 0 1 15 0"/></svg>
+          </span>
+          <span class="entry-kicker">Portal de Compras</span>
+          <h3>Área do Participante</h3>
+          <p class="muted">Escolha seus números, participe das melhores rifas e acompanhe tudo com facilidade.</p>
+          <button id="btn-open-user-auth">Quero participar</button>
+        </div>
+        <div
+          class="entry-card admin"
+          role="button"
+          tabindex="0"
+          data-entry-target="admin"
+          aria-label="Abrir Área do Organizador"
+        >
+          <span class="entry-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/><path d="m3 6 6-3 6 5 6-5"/></svg>
+          </span>
+          <span class="entry-kicker">Gestão da Rifa</span>
+          <h3>Área do Organizador</h3>
+          <p class="muted">Cadastre prêmios, crie campanhas e acompanhe vendas e pagamentos em tempo real.</p>
+          <button class="alt" id="btn-open-admin-auth">Gerenciar minhas rifas</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="user-auth-view" class="panel hidden">
+      <span class="back-link" id="btn-back-user-entry">← Voltar</span>
+      <div class="participant-auth-shell">
+        <h2>Portal do Usuário</h2>
+        <div id="participant-login-panel" class="participant-auth-panel">
+          <h3>Login</h3>
+          <input id="user-login-tenant" placeholder="Identificador do organizador">
+          <input id="user-login-email" type="email" placeholder="E-mail">
+          <input id="user-login-pass" type="password" placeholder="Senha">
+          <button id="btn-user-login">Entrar</button>
+          <button id="btn-show-user-register" class="auth-switch-button" type="button">Não tem cadastro? Clique aqui</button>
+        </div>
+        <div id="participant-register-panel" class="participant-auth-panel hidden">
+          <h3>Cadastro</h3>
+          <div class="pix-registration-notice" role="note">
+            <strong>Aceitamos pagamentos somente via PIX.</strong>
+            Para gerar o pagamento, é obrigatório informar nome completo, e-mail e CPF/CNPJ válidos. O endereço será utilizado para facilitar a entrega do prêmio caso você seja contemplado.
+          </div>
+          <input id="user-reg-tenant" placeholder="Identificador do organizador">
+          <input id="user-reg-name" placeholder="Nome">
+          <input id="user-reg-phone" placeholder="Telefone">
+          <input id="user-reg-tax-id" inputmode="numeric" placeholder="CPF ou CNPJ">
+          <input id="user-reg-email" type="email" placeholder="E-mail">
+          <input id="user-reg-pass" type="password" placeholder="Senha">
+          <div class="registration-address">
+            <h4>Endereço para entrega do prêmio</h4>
+            <div class="grid2">
+              <input id="user-reg-postal-code" inputmode="numeric" placeholder="CEP" required>
+              <input id="user-reg-state" maxlength="2" placeholder="UF" required>
+            </div>
+            <input id="user-reg-street" placeholder="Logradouro (rua, avenida...)" required>
+            <div class="grid2">
+              <input id="user-reg-number" placeholder="Número" required>
+              <input id="user-reg-complement" placeholder="Complemento (opcional)">
+            </div>
+            <div class="grid2">
+              <input id="user-reg-district" placeholder="Bairro" required>
+              <input id="user-reg-city" placeholder="Cidade" required>
+            </div>
+          </div>
+          <button class="alt" id="btn-user-register">Cadastrar</button>
+          <button id="btn-show-user-login" class="auth-switch-button" type="button">Já tem cadastro? Voltar ao login</button>
+        </div>
+        <div class="organizer-contact">
+          <p>Ficou com alguma dúvida ou precisa reportar um problema? Fale conosco pelo WhatsApp.</p>
+          <a class="whatsapp-contact-button" href="https://wa.me/5534988633542?text=Ol%C3%A1%2C%20venho%20do%20AppRifa%20e%20preciso%20de%20ajuda." target="_blank" rel="noopener noreferrer" aria-label="Tirar dúvidas ou reportar um problema pelo WhatsApp">
+            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.4-4.3A8.5 8.5 0 1 1 20.5 11.7Z"/>
+              <path d="M8.2 7.6c.3-.5.6-.5.9-.5h.4c.2 0 .4.1.5.4l.8 1.8c.1.3.1.5-.1.7l-.6.8c-.2.2-.1.4 0 .6.7 1.2 1.7 2.1 3 2.7.2.1.4.1.6-.1l.8-1c.2-.2.4-.3.7-.2l1.8.8c.3.1.5.3.5.6 0 .5-.2 1.5-.8 2-.6.5-1.4.8-2.3.6-1.1-.2-2.5-.7-4.3-2.2-1.5-1.3-2.6-2.9-3-4.1-.4-1.1 0-2.2.4-2.7l.7-.2Z"/>
+            </svg>
+            Falar com o suporte
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="admin-auth-view" class="panel hidden">
+      <span class="back-link" id="btn-back-admin-entry">← Voltar</span>
+      <h2>Portal do Cliente</h2>
+      <div>
+          <h3>Login do responsável pela rifa</h3>
+          <input id="admin-login-tenant" placeholder="Identificador do organizador">
+          <input id="admin-login-email" type="email" placeholder="E-mail">
+          <input id="admin-login-pass" type="password" placeholder="Senha">
+          <button id="btn-admin-login">Entrar</button>
+      </div>
+      <div class="organizer-contact">
+        <p><strong>Não tem cadastro?</strong> Entre em contato, vamos conversar. Posso te ajudar a transformar sua experiência com rifas.</p>
+        <a class="whatsapp-contact-button" href="https://wa.me/5534988633542?text=Ol%C3%A1%2C%20venho%20do%20AppRifa" target="_blank" rel="noopener noreferrer" aria-label="Conversar pelo WhatsApp">
+          <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.5 11.7a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.4-4.3A8.5 8.5 0 1 1 20.5 11.7Z"/>
+            <path d="M8.2 7.6c.3-.5.6-.5.9-.5h.4c.2 0 .4.1.5.4l.8 1.8c.1.3.1.5-.1.7l-.6.8c-.2.2-.1.4 0 .6.7 1.2 1.7 2.1 3 2.7.2.1.4.1.6-.1l.8-1c.2-.2.4-.3.7-.2l1.8.8c.3.1.5.3.5.6 0 .5-.2 1.5-.8 2-.6.5-1.4.8-2.3.6-1.1-.2-2.5-.7-4.3-2.2-1.5-1.3-2.6-2.9-3-4.1-.4-1.1 0-2.2.4-2.7l.7-.2Z"/>
+          </svg>
+          Conversar pelo WhatsApp
+        </a>
+      </div>
+    </section>
+
+    <section id="app-view" class="hidden">
+      <nav id="client-workspace-tabs" class="client-workspace-tabs" aria-label="Área do cliente">
+        <button class="client-tab-button manager-only" type="button" data-client-view="connect">Conectar PIX</button>
+        <button class="client-tab-button manager-only" type="button" data-client-view="create">Gerar rifa</button>
+        <button id="tab-raffles-open" class="client-tab-button manager-only" type="button" data-client-view="raffles-open">Rifas abertas (0)</button>
+        <button id="tab-raffles-closed" class="client-tab-button manager-only" type="button" data-client-view="raffles-closed">Rifas encerradas (0)</button>
+        <button class="client-tab-button manager-only" type="button" data-client-view="account">Cadastro</button>
+        <button class="client-tab-button manager-only" type="button" data-client-view="financial">Financeiro</button>
+        <button class="client-tab-button participant-only active" type="button" data-client-view="raffles">Rifas</button>
+        <button class="client-tab-button participant-only" type="button" data-client-view="account">Cadastro</button>
+      </nav>
+
+      <div id="client-tab-connect" class="client-tab-panel manager-only hidden">
+        <div class="panel">
+          <h2>Conectar PIX</h2>
+          <p class="muted">Cadastre o titular e autorize a conta Mercado Pago que receberá os pagamentos das suas rifas.</p>
+          <div class="grid2">
+            <label>Tipo do titular
+              <select id="mp-holder-type">
+                <option value="">Selecione</option>
+                <option value="PF">Pessoa física</option>
+                <option value="PJ">Pessoa jurídica</option>
+              </select>
+            </label>
+            <label>Nome ou razão social
+              <input id="mp-holder-name" maxlength="180" autocomplete="name" placeholder="Titular da conta Mercado Pago">
+            </label>
+            <label>CPF ou CNPJ
+              <input id="mp-holder-tax-id" maxlength="18" inputmode="numeric" placeholder="Somente números">
+            </label>
+            <label>E-mail da conta Mercado Pago
+              <input id="mp-account-email" maxlength="180" type="email" autocomplete="email" placeholder="conta@exemplo.com">
+            </label>
+            <label>Telefone do titular
+              <input id="mp-account-phone" maxlength="16" inputmode="tel" autocomplete="tel" placeholder="DDD e número">
+            </label>
+          </div>
+          <label><input id="mp-kyc-confirmed" type="checkbox"> Confirmo que esta conta Mercado Pago pertence ao titular informado e está com a identidade validada.</label>
+          <button id="btn-save-mp-profile" type="button">Salvar informações de recebimento</button>
+          <p id="mp-profile-status" class="muted"></p>
+          <div id="mp-connection-details" class="muted"></div>
+          <p id="stripe-connect-status" class="muted"></p>
+          <div id="mp-authorization-progress" class="hidden" aria-live="polite">
+            <progress id="mp-authorization-progress-bar" max="100" value="0" style="width:100%"></progress>
+            <p id="mp-authorization-progress-text" class="muted">Aguardando início da autorização.</p>
+          </div>
+          <button id="btn-stripe-connect" class="alt" type="button">Autorizar conta no Mercado Pago</button>
+          <p class="muted">A senha, o token e o código de verificação são informados somente na página oficial do Mercado Pago.</p>
+        </div>
+      </div>
+
+      <div id="client-tab-create" class="client-tab-panel manager-only hidden">
+        <div id="admin-panel" class="panel">
+          <h2>Gerar nova rifa</h2>
+          <p class="muted">Cadastre o prêmio, envie fotos ou vídeos e configure a modalidade da rifa.</p>
+          <input id="prod-title" placeholder="Título do produto">
+          <textarea id="prod-desc" rows="3" placeholder="Descrição do produto"></textarea>
+          <input id="prod-files" type="file" multiple accept="image/*,video/*">
+          <select id="raffle-type">
+            <option value="BICHO_25">Rifa jogo do bicho (1 a 25)</option>
+            <option value="NUMERICA_100">Rifa numérica (1 a 100)</option>
+            <option value="NUMERICA_1000">Rifa personalizada (até 1.000 números)</option>
+          </select>
+          <div id="custom-raffle-range" class="custom-range-field hidden">
+            <label for="raffle-total-numbers">Quantidade de números</label>
+            <input id="raffle-total-numbers" type="number" min="1" max="1000" step="1" value="1000">
+            <small>A numeração começará em 1 e terminará no valor escolhido.</small>
+          </div>
+          <input id="raffle-title" placeholder="Título da rifa">
+          <textarea id="raffle-desc" rows="2" placeholder="Descrição da rifa"></textarea>
+          <input id="raffle-price" type="number" min="1" step="0.01" placeholder="Preço por número">
+          <label class="create-field-label" for="raffle-discount-percent">Desconto para 3 ou mais números (%)</label>
+          <input id="raffle-discount-percent" type="number" min="0" max="100" step="0.01" value="10">
+          <small class="create-field-help">Informe 0 para criar a rifa sem desconto por quantidade.</small>
+          <label class="create-field-label" for="raffle-winner-count">Quantidade de ganhadores</label>
+          <input id="raffle-winner-count" type="number" min="1" max="5" step="1" value="3">
+          <small class="create-field-help">Escolha entre 1 e 5 ganhadores.</small>
+          <div id="raffle-share-field" class="share-link-field hidden">
+            <label for="raffle-share-url">Link para cadastro e compra</label>
+            <div class="share-link-row">
+              <input id="raffle-share-url" type="url" readonly aria-describedby="raffle-share-help">
+              <button id="btn-copy-raffle-url" class="alt" type="button">Copiar link</button>
+            </div>
+            <small id="raffle-share-help">Este link está vinculado à rifa criada e inclui automaticamente o identificador da sua organização.</small>
+            <small id="raffle-share-feedback" class="share-link-feedback" role="status"></small>
+          </div>
+          <button id="btn-create-raffle">Criar rifa</button>
+        </div>
+      </div>
+
+      <div id="client-tab-financial" class="client-tab-panel manager-only hidden">
+        <div id="organizer-financial-dashboard" class="org-noc"><div class="empty">Carregando dados financeiros...</div></div>
+      </div>
+
+      <div id="client-tab-account" class="client-tab-panel hidden">
+        <div class="panel">
+          <h2>Meu cadastro</h2>
+          <p class="muted">Mantenha seus dados atualizados para identificação do pagamento e entrega do prêmio.</p>
+          <form id="account-form">
+            <div class="grid2">
+              <label>Nome completo<input id="account-name" autocomplete="name" required></label>
+              <label>E-mail<input id="account-email" type="email" autocomplete="email" required></label>
+              <label>Telefone<input id="account-phone" autocomplete="tel" required></label>
+              <label>CPF ou CNPJ<input id="account-tax-id" inputmode="numeric" required></label>
+              <label>CEP<input id="account-postal-code" inputmode="numeric" required></label>
+              <label>UF<input id="account-state" maxlength="2" required></label>
+            </div>
+            <label>Logradouro<input id="account-street" required></label>
+            <div class="grid2">
+              <label>Número<input id="account-number" required></label>
+              <label>Complemento<input id="account-complement"></label>
+              <label>Bairro<input id="account-district" required></label>
+              <label>Cidade<input id="account-city" required></label>
+            </div>
+            <h3>Alterar senha</h3>
+            <p class="muted">Deixe estes campos vazios se não quiser trocar a senha.</p>
+            <div class="grid2">
+              <label>Senha atual<input id="account-current-password" type="password" autocomplete="current-password"></label>
+              <label>Nova senha<input id="account-new-password" type="password" minlength="8" autocomplete="new-password"></label>
+              <label>Confirmar nova senha<input id="account-confirm-password" type="password" minlength="8" autocomplete="new-password"></label>
+            </div>
+            <button id="btn-save-account" type="submit">Salvar alterações</button>
+            <p id="account-status" class="muted" role="status"></p>
+          </form>
+        </div>
+      </div>
+
+      <div id="client-tab-raffles" class="client-tab-panel">
+        <div class="panel">
+          <h2 id="raffles-heading">Rifas</h2>
+          <p id="raffles-description" class="muted">Acompanhe as rifas disponíveis e consulte seus detalhes.</p>
+          <div id="raffles-list" class="grid3"></div>
+        </div>
+
+        <div id="raffle-detail" class="panel hidden"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      token: localStorage.getItem("token") || "",
+      user: JSON.parse(localStorage.getItem("user") || "null"),
+      tenant: JSON.parse(localStorage.getItem("tenant") || "null"),
+      raffles: [],
+      raffleView: "raffles",
+      currentRaffle: null,
+      selectedNumbers: new Set(),
+      paymentMethod: "pix",
+      paymentSelectionOpen: false,
+      paymentConfig: null,
+      stripe: null,
+      stripeElements: null,
+      stripeCard: null,
+      pixPollTimer: null,
+      currentPixCopyText: "",
+      sharedRaffleId: null,
+      sharedTenantSlug: null,
+      createdRaffleId: null,
+    };
+
+    function api(path, options = {}) {
+      const headers = { "Content-Type": "application/json", ...(options.headers || {}) };
+      if (state.token) headers.Authorization = `Bearer ${state.token}`;
+      return fetch(path, { ...options, headers }).then(async (r) => {
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw Object.assign(new Error(body.error || "Erro de API"), { status: r.status, body });
+        return body;
+      });
+    }
+
+    function showPreAuthView(view) {
+      const entry = document.getElementById("entry-view");
+      const userAuth = document.getElementById("user-auth-view");
+      const adminAuth = document.getElementById("admin-auth-view");
+      if (!entry || !userAuth || !adminAuth) return;
+
+      entry.classList.toggle("hidden", view !== "entry");
+      userAuth.classList.toggle("hidden", view !== "user");
+      adminAuth.classList.toggle("hidden", view !== "admin");
+      if (view === "user") showParticipantAuthPanel("login");
+      document.querySelectorAll(".nav-link[data-nav-target]").forEach((link) => {
+        const isActive = link.dataset.navTarget === view;
+        link.classList.toggle("active", isActive);
+        if (isActive) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+      });
+    }
+
+    function showParticipantAuthPanel(panel) {
+      const showingRegister = panel === "register";
+      document.getElementById("participant-login-panel")?.classList.toggle("hidden", showingRegister);
+      document.getElementById("participant-register-panel")?.classList.toggle("hidden", !showingRegister);
+      if (showingRegister) {
+        const loginTenant = document.getElementById("user-login-tenant")?.value.trim();
+        const registerTenant = document.getElementById("user-reg-tenant");
+        if (loginTenant && registerTenant && !registerTenant.value.trim()) registerTenant.value = loginTenant;
+        document.getElementById("user-reg-name")?.focus();
+      } else {
+        document.getElementById("user-login-email")?.focus();
+      }
+    }
+
+    function showClientWorkspaceTab(view) {
+      const isManager = Boolean(state.user && ["admin", "owner"].includes(state.user.role));
+      const managerViews = ["connect", "create", "account", "financial", "raffles-open", "raffles-closed"];
+      const selectedView = isManager
+        ? (managerViews.includes(view) ? view : "raffles-open")
+        : (["raffles", "account"].includes(view) ? view : "raffles");
+      const selectedPanel = selectedView.startsWith("raffles") ? "raffles" : selectedView;
+      ["connect", "create", "account", "financial", "raffles"].forEach((name) => {
+        document.getElementById(`client-tab-${name}`)?.classList.toggle("hidden", name !== selectedPanel);
+      });
+      state.raffleView = selectedView;
+      if (selectedView === "create") updateRaffleShareUrl(state.createdRaffleId);
+      if (selectedView === "financial") void loadOrganizerFinancialDashboard();
+      if (selectedView === "account") void loadAccount();
+      document.querySelectorAll("[data-client-view]").forEach((button) => {
+        const active = button.dataset.clientView === selectedView;
+        button.classList.toggle("active", active);
+        if (active) button.setAttribute("aria-current", "page");
+        else button.removeAttribute("aria-current");
+      });
+      if (selectedPanel === "raffles") {
+        state.currentRaffle = null;
+        document.getElementById("raffle-detail")?.classList.add("hidden");
+        renderRaffles();
+      }
+    }
+
+    async function loadAccount() {
+      const status = document.getElementById("account-status");
+      try {
+        const account = await api("/api/account");
+        const fields = {
+          name: account.name, email: account.email, phone: account.phone, "tax-id": account.taxId,
+          "postal-code": account.addressPostalCode, street: account.addressStreet,
+          number: account.addressNumber, complement: account.addressComplement,
+          district: account.addressDistrict, city: account.addressCity, state: account.addressState,
+        };
+        Object.entries(fields).forEach(([id, value]) => { document.getElementById(`account-${id}`).value = value || ""; });
+        status.textContent = "";
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    }
+
+    async function saveAccount(event) {
+      event.preventDefault();
+      const currentPassword = document.getElementById("account-current-password").value;
+      const newPassword = document.getElementById("account-new-password").value;
+      const confirmPassword = document.getElementById("account-confirm-password").value;
+      const status = document.getElementById("account-status");
+      if (newPassword !== confirmPassword) {
+        status.textContent = "A confirmação da nova senha não confere.";
+        return;
+      }
+      const button = document.getElementById("btn-save-account");
+      button.disabled = true;
+      status.textContent = "Salvando alterações...";
+      try {
+        const result = await api("/api/account", {
+          method: "PATCH",
+          body: JSON.stringify({
+            name: document.getElementById("account-name").value,
+            email: document.getElementById("account-email").value,
+            phone: document.getElementById("account-phone").value,
+            taxId: document.getElementById("account-tax-id").value,
+            addressPostalCode: document.getElementById("account-postal-code").value,
+            addressStreet: document.getElementById("account-street").value,
+            addressNumber: document.getElementById("account-number").value,
+            addressComplement: document.getElementById("account-complement").value,
+            addressDistrict: document.getElementById("account-district").value,
+            addressCity: document.getElementById("account-city").value,
+            addressState: document.getElementById("account-state").value,
+            currentPassword, newPassword,
+          }),
+        });
+        setAuth(result.token, result.user, state.tenant);
+        showClientWorkspaceTab("account");
+        document.getElementById("account-current-password").value = "";
+        document.getElementById("account-new-password").value = "";
+        document.getElementById("account-confirm-password").value = "";
+        status.textContent = result.message;
+      } catch (error) {
+        status.textContent = error.message;
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function updateCustomRaffleRange() {
+      const isCustom = document.getElementById("raffle-type").value === "NUMERICA_1000";
+      document.getElementById("custom-raffle-range").classList.toggle("hidden", !isCustom);
+      document.getElementById("raffle-total-numbers").required = isCustom;
+    }
+
+    async function loadOrganizerFinancialDashboard() {
+      const root = document.getElementById("organizer-financial-dashboard");
+      const money = value => Number(value || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+      const add = (parent, tag, value, className) => { const node = document.createElement(tag); node.textContent = value; if (className) node.className = className; parent.append(node); return node; };
+      root.replaceChildren(); add(root, "div", "Sincronizando conciliação financeira...", "empty");
+      try {
+        const data = await api("/api/payments/mercadopago/financial-dashboard");
+        root.replaceChildren();
+        const head = document.createElement("div"); head.className = "org-noc-head";
+        const copy = document.createElement("div"); add(copy,"span","NOC FINANCEIRO DO ORGANIZADOR","org-noc-kicker"); add(copy,"h2","Conciliação financeira");
+        add(head,"span",data.account?.status === "ATIVO" ? "● CONTA OPERACIONAL" : "● CONTA PENDENTE","org-noc-status"); head.prepend(copy); root.append(head);
+        const metrics = document.createElement("div"); metrics.className = "org-noc-metrics";
+        [["Total recebido",money(data.summary.grossAmount),`${data.summary.payments} pagamentos`],["Líquido do organizador",money(data.summary.sellerNetAmount),"Após taxas e comissão"],["Comissão da plataforma",money(data.summary.platformFeeAmount),"AppRifa"],["Taxas Mercado Pago",money(data.summary.mercadoPagoFeeAmount),"Valores identificados"],["Pendências",String(data.summary.pending),`${data.summary.approved} aprovados`]].forEach(([label,value,detail])=>{ const card=document.createElement("article"); card.className="org-noc-metric"; add(card,"span",label); add(card,"strong",value); add(card,"small",detail); metrics.append(card); });
+        root.append(metrics);
+        const telemetry=document.createElement("div"); telemetry.className="org-noc-telemetry"; add(telemetry,"span","ÚLTIMA CONCILIAÇÃO"); add(telemetry,"strong",data.lastReconciledAt ? new Date(data.lastReconciledAt).toLocaleString("pt-BR") : "Nenhuma conciliação registrada"); root.append(telemetry);
+        const wrap=document.createElement("div"); wrap.className="org-noc-table-wrap"; const table=document.createElement("table"); table.className="org-noc-table";
+        const thead=document.createElement("thead"), header=document.createElement("tr"); ["Pagamento","Rifa","Cobrado","Comissão","Taxa MP","Líquido","Situação","Data"].forEach(title=>add(header,"th",title)); thead.append(header);
+        const tbody=document.createElement("tbody"); data.payments.forEach(payment=>{ const row=document.createElement("tr"), status=payment.financialStatus||payment.status; [payment.externalId||`local ${payment.id}`,payment.Raffle?.title||"-",money(payment.amount),money(payment.marketplaceFeeAmount),payment.mercadoPagoFeeAmount==null?"Pendente":money(payment.mercadoPagoFeeAmount),payment.sellerNetAmount==null?"Pendente":money(payment.sellerNetAmount),status,new Date(payment.createdAt).toLocaleString("pt-BR")].forEach((value,index)=>{ const cell=add(row,"td",String(value)); if(index===6) cell.className=`org-financial-state ${String(status).toLowerCase()}`; }); tbody.append(row); });
+        if (!data.payments.length) { const row=document.createElement("tr"), cell=add(row,"td","Nenhum pagamento Mercado Pago registrado para esta organização."); cell.colSpan=8; tbody.append(row); }
+        table.append(thead,tbody); wrap.append(table); root.append(wrap);
+      } catch (error) { root.replaceChildren(); add(root,"div",error.message,"empty"); }
+    }
+
+    function buildRaffleShareUrl(raffleId = null) {
+      if (!state.tenant?.slug) return "";
+      const url = new URL(window.location.origin + window.location.pathname);
+      url.searchParams.set("tenant", state.tenant.slug);
+      if (raffleId) url.searchParams.set("raffle", String(raffleId));
+      return url.toString();
+    }
+
+    function updateRaffleShareUrl(raffleId = null) {
+      const field = document.getElementById("raffle-share-url");
+      const container = document.getElementById("raffle-share-field");
+      const valid = Boolean(raffleId && state.tenant?.slug);
+      if (field) field.value = valid ? buildRaffleShareUrl(raffleId) : "";
+      if (container) container.classList.toggle("hidden", !valid);
+    }
+
+    async function copyRaffleShareUrl() {
+      const field = document.getElementById("raffle-share-url");
+      const feedback = document.getElementById("raffle-share-feedback");
+      if (!field?.value) return;
+      try {
+        await navigator.clipboard.writeText(field.value);
+        feedback.textContent = "Link copiado para a área de transferência.";
+      } catch (_) {
+        field.select();
+        document.execCommand("copy");
+        feedback.textContent = "Link copiado para a área de transferência.";
+      }
+    }
+
+    function applySharedLink() {
+      const params = new URLSearchParams(window.location.search);
+      const slug = String(params.get("tenant") || "").trim().toLowerCase();
+      const raffleId = Number(params.get("raffle"));
+      if (!/^[a-z0-9-]{1,80}$/.test(slug)) return;
+      state.sharedTenantSlug = slug;
+      ["user-login-tenant", "user-reg-tenant"].forEach((id) => {
+        const input = document.getElementById(id);
+        if (input) {
+          input.value = slug;
+          input.readOnly = true;
+          input.classList.add("tenant-locked");
+          input.setAttribute("aria-readonly", "true");
+          input.title = "Organização definida pelo link compartilhado";
+        }
+      });
+      if (Number.isInteger(raffleId) && raffleId > 0) state.sharedRaffleId = raffleId;
+      if (!state.user) showPreAuthView("user");
+    }
+
+    async function openSharedRaffleAfterAuth() {
+      if (!state.sharedRaffleId) return;
+      const raffle = state.raffles.find((item) => Number(item.id) === state.sharedRaffleId);
+      if (raffle) await openRaffle(raffle.id);
+    }
+
+    function initEntryCardAccessibility() {
+      document.querySelectorAll(".entry-card[data-entry-target]").forEach((card) => {
+        const activate = () => showPreAuthView(card.dataset.entryTarget);
+        card.addEventListener("click", activate);
+        card.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            activate();
+          }
+        });
+      });
+    }
+
+    async function loadPaymentConfig() {
+      if (!state.token) return;
+      state.paymentConfig = await api("/api/payments/config");
+      if (state.paymentConfig.stripeEnabled && window.Stripe) {
+        state.stripe = window.Stripe(state.paymentConfig.stripePublishableKey);
+        state.stripeElements = state.stripe.elements();
+      } else {
+        state.stripe = null;
+        state.stripeElements = null;
+      }
+      updateStripeConnectStatus();
+      if (["admin", "owner"].includes(state.user?.role)) await loadMercadoPagoReceivingProfile();
+    }
+
+    async function loadMercadoPagoReceivingProfile() {
+      const message = document.getElementById("mp-profile-status");
+      try {
+        const profile = await api("/api/payments/mercadopago/receiving-profile");
+        document.getElementById("mp-holder-name").value = profile.accountHolderName || "";
+        document.getElementById("mp-holder-type").value = profile.accountHolderType || "";
+        document.getElementById("mp-holder-tax-id").value = profile.accountHolderTaxId || "";
+        document.getElementById("mp-account-email").value = profile.accountEmail || "";
+        document.getElementById("mp-account-phone").value = profile.accountPhone || "";
+        document.getElementById("mp-kyc-confirmed").checked = Boolean(profile.kycConfirmed);
+        const details = document.getElementById("mp-connection-details");
+        details.textContent = profile.status === "ATIVO"
+          ? `Conta autorizada (ID ${profile.accountId}). Token gerenciado e renovado automaticamente pelo AppRifa.`
+          : "Conta ainda não autorizada. Após salvar, use o botão abaixo para entrar no Mercado Pago.";
+        message.textContent = profile.accountHolderName ? "Informações de recebimento cadastradas." : "Preencha os dados do titular antes de autorizar a conta.";
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    }
+
+    async function saveMercadoPagoReceivingProfile() {
+      const message = document.getElementById("mp-profile-status");
+      try {
+        await api("/api/payments/mercadopago/receiving-profile", {
+          method: "PUT",
+          body: JSON.stringify({
+            accountHolderName: document.getElementById("mp-holder-name").value,
+            accountHolderType: document.getElementById("mp-holder-type").value,
+            accountHolderTaxId: document.getElementById("mp-holder-tax-id").value,
+            accountEmail: document.getElementById("mp-account-email").value,
+            accountPhone: document.getElementById("mp-account-phone").value,
+            kycConfirmed: document.getElementById("mp-kyc-confirmed").checked,
+          }),
+        });
+        message.textContent = "Informações salvas. Agora autorize a conta no Mercado Pago.";
+      } catch (error) {
+        message.textContent = error.message;
+      }
+    }
+
+    function updateStripeConnectStatus() {
+      const node = document.getElementById("stripe-connect-status");
+      const stripeButton = document.getElementById("btn-stripe-connect");
+      if (!node) return;
+
+      if (state.paymentConfig && ["mock", "mercadopago"].includes(state.paymentConfig.provider)) {
+        if (stripeButton) stripeButton.classList.remove("hidden");
+        node.textContent = state.paymentConfig.mercadoPagoConnected
+          ? `Mercado Pago conectado. Comissão automática da plataforma: ${state.paymentConfig.marketplaceFeePercent}%.`
+          : "Conecte a conta Mercado Pago deste cliente para habilitar o recebimento via PIX.";
+        if (stripeButton) stripeButton.disabled = false;
+        if (!state.paymentConfig.mercadoPagoEnabled) {
+          const missing = state.paymentConfig.mercadoPagoSetupMissing || [];
+          node.textContent += ` Configuração pendente no servidor: ${missing.join(", ") || "credenciais OAuth"}.`;
+        }
+        return;
+      }
+
+      if (state.paymentConfig && state.paymentConfig.provider === "pagbank") {
+        if (stripeButton) stripeButton.classList.add("hidden");
+        node.textContent = state.paymentConfig.pagbankEnabled
+          ? "PagBank habilitado no servidor para este ambiente."
+          : "PagBank desabilitado no servidor (configure token e chaves).";
+        return;
+      }
+
+      if (stripeButton) stripeButton.classList.remove("hidden");
+
+      if (!(state.paymentConfig && state.paymentConfig.stripeEnabled)) {
+        node.textContent = "Stripe desabilitado no servidor.";
+        return;
+      }
+      node.textContent = state.paymentConfig.stripeConnected
+        ? `Stripe conectado nesta conta: ${state.paymentConfig.stripeAccountId}`
+        : "Stripe ainda nao conectado para este cliente.";
+    }
+
+    function mountStripeCardElement() {
+      const mountNode = document.getElementById("stripe-card-element");
+      if (!mountNode) return;
+      if (!(state.paymentConfig && state.paymentConfig.stripeEnabled && state.stripeElements)) {
+        mountNode.innerHTML = "";
+        return;
+      }
+
+      if (state.stripeCard) {
+        state.stripeCard.unmount();
+        state.stripeCard = null;
+      }
+
+      state.stripeCard = state.stripeElements.create("card", {
+        hidePostalCode: true,
+      });
+      state.stripeCard.mount("#stripe-card-element");
+    }
+
+    function updatePaymentMethodUI() {
+      const paymentPanel = document.getElementById("payment-choice-panel");
+      const stripeCardBox = document.getElementById("stripe-card-box");
+      const pagbankCardBox = document.getElementById("pagbank-card-box");
+      const cardWarning = document.getElementById("card-provider-warning");
+      const summaryNode = document.getElementById("payment-selection-summary");
+      const confirmButton = document.getElementById("btn-confirm-checkout");
+      if (paymentPanel) {
+        paymentPanel.classList.toggle("hidden", !state.paymentSelectionOpen);
+      }
+
+      const usingCard = state.paymentMethod === "credito" || state.paymentMethod === "debito";
+      const stripeAvailable = Boolean(state.paymentConfig && state.paymentConfig.stripeEnabled);
+      const pagbankAvailable = Boolean(state.paymentConfig && state.paymentConfig.pagbankEnabled);
+      const isStripeProvider = Boolean(state.paymentConfig && state.paymentConfig.provider === "stripe");
+      const isPagbankProvider = Boolean(state.paymentConfig && state.paymentConfig.provider === "pagbank");
+
+      if (stripeCardBox) {
+        stripeCardBox.classList.toggle("hidden", !(usingCard && isStripeProvider && stripeAvailable));
+      }
+      if (pagbankCardBox) {
+        pagbankCardBox.classList.toggle("hidden", !(usingCard && isPagbankProvider && pagbankAvailable));
+      }
+      if (cardWarning) {
+        const cardEnabled = (isStripeProvider && stripeAvailable) || (isPagbankProvider && pagbankAvailable);
+        cardWarning.classList.toggle("hidden", !(usingCard && !cardEnabled));
+      }
+
+      if (summaryNode) {
+        summaryNode.innerHTML = buildCheckoutSummary();
+      }
+      if (confirmButton) {
+        confirmButton.textContent = state.paymentMethod === "pix"
+          ? "Gerar QR Code e pagar"
+          : `Confirmar pagamento via ${paymentLabel(state.paymentMethod)}`;
+      }
+
+    }
+
+    function paymentLabel(method) {
+      if (method === "credito") return "Cartao de Credito";
+      if (method === "debito") return "Cartao de Debito";
+      return "PIX";
+    }
+
+    function buildCheckoutSummary() {
+      const numbers = [...state.selectedNumbers].sort((a, b) => a - b);
+      const subtotal = state.currentRaffle ? Number(state.currentRaffle.pricePerNumber) * numbers.length : 0;
+      const configuredDiscount = state.currentRaffle ? Number(state.currentRaffle.discountPercent ?? 10) : 0;
+      const discountPercent = numbers.length >= 3 ? configuredDiscount : 0;
+      const discountAmount = subtotal * discountPercent / 100;
+      const amount = subtotal - discountAmount;
+      const formattedNumbers = numbers.length
+        ? numbers.map((n) => String(n).padStart(state.currentRaffle && state.currentRaffle.totalNumbers >= 1000 ? 4 : 3, "0")).join(", ")
+        : "nenhum";
+
+      return `
+        <strong>Metodo escolhido:</strong> ${paymentLabel(state.paymentMethod)}<br>
+        <strong>Numeros:</strong> ${formattedNumbers}<br>
+        <strong>Subtotal:</strong> ${fmtMoney(subtotal)}<br>
+        ${discountPercent ? `<strong>Desconto (${discountPercent}%):</strong> -${fmtMoney(discountAmount)}<br>` : ""}
+        <strong>Total:</strong> ${fmtMoney(amount)}
+      `;
+    }
+
+    function openPaymentSelection() {
+      const numbers = [...state.selectedNumbers];
+      if (!numbers.length) {
+        alert("Selecione ao menos um numero.");
+        return;
+      }
+      state.paymentSelectionOpen = true;
+      updatePaymentMethodUI();
+    }
+
+    function closePaymentSelection() {
+      state.paymentSelectionOpen = false;
+      updatePaymentMethodUI();
+    }
+
+    async function createStripePaymentMethodId() {
+      if (!(state.paymentConfig && state.paymentConfig.stripeEnabled)) return null;
+      const usingCard = state.paymentMethod === "credito" || state.paymentMethod === "debito";
+      if (!usingCard) return null;
+      if (!state.stripe || !state.stripeCard) {
+        throw new Error("Stripe Elements nao inicializado");
+      }
+
+      const result = await state.stripe.createPaymentMethod({
+        type: "card",
+        card: state.stripeCard,
+        billing_details: {
+          name: state.user?.name || "",
+          email: state.user?.email || "",
+          phone: state.user?.phone || "",
+        },
+      });
+
+      if (result.error) {
+        throw new Error(result.error.message || "Falha ao validar cartao");
+      }
+      return result.paymentMethod.id;
+    }
+
+    function collectPagBankCardDetails() {
+      const holderName = document.getElementById("pg-holder-name")?.value.trim();
+      const holderTaxId = document.getElementById("pg-holder-tax-id")?.value.trim();
+      const expMonth = document.getElementById("pg-exp-month")?.value.trim();
+      const expYear = document.getElementById("pg-exp-year")?.value.trim();
+      const securityCode = document.getElementById("pg-cvv")?.value.trim();
+      const number = document.getElementById("pg-card-number")?.value.replace(/\s+/g, "").trim();
+      const eci = document.getElementById("pg-auth-eci")?.value.trim();
+      const cavv = document.getElementById("pg-auth-cavv")?.value.trim();
+      const xid = document.getElementById("pg-auth-xid")?.value.trim();
+      const version = document.getElementById("pg-auth-version")?.value.trim();
+      const dstransId = document.getElementById("pg-auth-dstrans")?.value.trim();
+
+      if (!holderName || !holderTaxId || !expMonth || !expYear || !securityCode || !number) {
+        throw new Error("Preencha os campos do cartao para PagBank.");
+      }
+      if (state.paymentMethod === "debito" && !eci) {
+        throw new Error("ECI e obrigatorio para cartao de debito no PagBank.");
+      }
+      return {
+        holderName,
+        holderTaxId,
+        expMonth,
+        expYear,
+        securityCode,
+        number,
+        authenticationMethod: {
+          type: "THREEDS",
+          eci,
+          cavv,
+          xid,
+          version,
+          dstransId,
+        },
+      };
+    }
+
+    function createPagBankEncryptedCard(cardData) {
+      if (!window.PagSeguro || typeof window.PagSeguro.encryptCard !== "function") {
+        throw new Error("SDK do PagBank nao carregado no navegador");
+      }
+      const publicKey = state.paymentConfig?.pagbankPublicKey;
+      if (!publicKey) {
+        throw new Error("PAGBANK_PUBLIC_KEY nao configurada no servidor");
+      }
+
+      const encryptedResult = window.PagSeguro.encryptCard({
+        publicKey,
+        holder: cardData.holderName,
+        number: cardData.number,
+        expMonth: cardData.expMonth,
+        expYear: cardData.expYear,
+        securityCode: cardData.securityCode,
+      });
+
+      if (!encryptedResult || encryptedResult.hasErrors || !encryptedResult.encryptedCard) {
+        const message = encryptedResult?.errors?.[0]?.message || "Falha ao criptografar cartao com PagBank";
+        throw new Error(message);
+      }
+      return encryptedResult.encryptedCard;
+    }
+
+    async function createGatewayPaymentData() {
+      const usingCard = state.paymentMethod === "credito" || state.paymentMethod === "debito";
+      if (!usingCard) {
+        return { paymentMethodId: null, paymentDetails: null };
+      }
+
+      if (state.paymentConfig?.provider === "stripe") {
+        const paymentMethodId = await createStripePaymentMethodId();
+        return { paymentMethodId, paymentDetails: null };
+      }
+
+      if (state.paymentConfig?.provider === "pagbank") {
+        const cardData = collectPagBankCardDetails();
+        const encrypted = createPagBankEncryptedCard(cardData);
+        return {
+          paymentMethodId: null,
+          paymentDetails: {
+            customerTaxId: cardData.holderTaxId,
+            card: {
+              encrypted,
+              holderName: cardData.holderName,
+              holderTaxId: cardData.holderTaxId,
+              expMonth: cardData.expMonth,
+              expYear: cardData.expYear,
+              securityCode: cardData.securityCode,
+              installments: 1,
+              authenticationMethod: cardData.authenticationMethod,
+            },
+          },
+        };
+      }
+
+      throw new Error("Provider de cartao nao configurado no servidor");
+    }
+
+    function showPixInfo(message) {
+      const node = document.getElementById("pix-status");
+      if (!node) return;
+      node.innerHTML = message;
+      node.classList.remove("hidden");
+    }
+
+    function showPixFailureReason(message) {
+      const node = document.getElementById("pix-failure-reason");
+      if (!node) return;
+      if (!message) {
+        node.replaceChildren();
+        node.classList.add("hidden");
+        return;
+      }
+      const title = document.createElement("strong");
+      title.textContent = "Motivo de o QR Code não ter sido gerado";
+      const detail = document.createElement("span");
+      detail.textContent = String(message);
+      node.replaceChildren(title, detail);
+      node.classList.remove("hidden");
+    }
+
+    function escapePix(value) {
+      return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    function buildPixDetailHtml(gatewayPayload) {
+      if (!gatewayPayload) return "";
+      const display = gatewayPayload.nextAction?.display_qr_code || gatewayPayload.nextAction?.pix_display_qr_code;
+      const image = gatewayPayload.qrCodeImage || display?.image_url_png || "";
+      const qrImage = /^(data:image\/png;base64,[A-Za-z0-9+/=]+$|https:\/\/)/.test(image) ? image : "";
+      const qrText = gatewayPayload.qrCodeText || display?.data || display?.emv || "";
+      let ticketUrl = "";
+      try {
+        const url = new URL(gatewayPayload.ticketUrl);
+        if (url.protocol === "https:" && (url.hostname === "mercadopago.com.br" || url.hostname.endsWith(".mercadopago.com.br"))) ticketUrl = url.href;
+      } catch (_) {}
+      return `
+        ${qrImage ? `<p><img src="${escapePix(qrImage)}" alt="QR PIX" style="max-width:220px; width:100%;"></p>` : ""}
+        ${qrText ? `<div><strong>Copia e Cola PIX:</strong><code class="pix-copy-code">${escapePix(qrText)}</code><button id="btn-copy-pix" type="button">Copiar código PIX</button><span id="pix-copy-feedback" class="pix-copy-feedback" role="status" aria-live="polite"></span></div>` : ""}
+        ${ticketUrl ? `<p><a href="${escapePix(ticketUrl)}" target="_blank" rel="noopener noreferrer">Abrir pagamento no Mercado Pago</a></p>` : ""}
+      `;
+    }
+
+    async function copyPixCode() {
+      const feedback = document.getElementById("pix-copy-feedback");
+      const button = document.getElementById("btn-copy-pix");
+      if (!state.currentPixCopyText) return;
+      const copyWithFallback = () => {
+        const field = document.createElement("textarea");
+        field.value = state.currentPixCopyText;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        const copied = document.execCommand("copy");
+        field.remove();
+        if (!copied) throw new Error("copy unavailable");
+      };
+      try {
+        if (navigator.clipboard?.writeText) {
+          try {
+            await navigator.clipboard.writeText(state.currentPixCopyText);
+          } catch (_) {
+            copyWithFallback();
+          }
+        } else {
+          copyWithFallback();
+        }
+        if (feedback) feedback.textContent = "Código copiado!";
+        if (button) button.textContent = "Copiado";
+      } catch (_) {
+        if (feedback) feedback.textContent = "Toque e segure o código acima para copiar.";
+      }
+    }
+
+    function pixStorageKey() {
+      return `pix:${state.user?.id}:${state.currentRaffle?.id}`;
+    }
+
+    function renderPendingPix(payment) {
+      showPixFailureReason("");
+      const gatewayPayload = payment.gatewayPayload || payment.payload;
+      const display = gatewayPayload?.nextAction?.display_qr_code || gatewayPayload?.nextAction?.pix_display_qr_code;
+      state.currentPixCopyText = String(gatewayPayload?.qrCodeText || display?.data || display?.emv || "");
+      const expiration = payment.expiresAt ? `<p>Validade do PIX: ${escapePix(new Date(payment.expiresAt).toLocaleString("pt-BR"))}</p>` : "";
+      showPixInfo((payment.externalId
+        ? "PIX criado. Aguardando confirmacao do pagamento."
+        : "Estamos confirmando a criacao do PIX. Seus numeros continuam reservados.")
+        + expiration + buildPixDetailHtml(gatewayPayload));
+      const copyButton = document.getElementById("btn-copy-pix");
+      if (copyButton) copyButton.onclick = copyPixCode;
+    }
+
+    async function startPixStatusPolling(paymentId) {
+      if (state.pixPollTimer) {
+        clearInterval(state.pixPollTimer);
+        state.pixPollTimer = null;
+      }
+
+      state.pixPollTimer = setInterval(async () => {
+        try {
+          const payment = await api(`/api/payments/${paymentId}`);
+          if (payment.status === "pendente") renderPendingPix(payment);
+          if (payment.status !== "pendente") sessionStorage.removeItem(pixStorageKey());
+          if (payment.status === "pago") {
+            clearInterval(state.pixPollTimer);
+            state.pixPollTimer = null;
+            showPixInfo("Pagamento PIX confirmado. Seus numeros estao confirmados.");
+            if (state.currentRaffle) {
+              await openRaffle(state.currentRaffle.id);
+              await loadRaffles();
+            }
+          }
+          if (payment.status === "falhou") {
+            clearInterval(state.pixPollTimer);
+            state.pixPollTimer = null;
+            showPixInfo("Pagamento PIX falhou ou foi cancelado. Numeros liberados para nova compra.");
+            showPixFailureReason(payment.payload?.gatewayErrorMessage || "A cobrança foi recusada pelo Mercado Pago. Confira seus dados cadastrais e tente novamente.");
+            if (state.currentRaffle) {
+              await openRaffle(state.currentRaffle.id);
+              await loadRaffles();
+            }
+          }
+        } catch (_error) {
+          // Ignora erro transitorio e tenta novamente no proximo ciclo.
+        }
+      }, 5000);
+    }
+
+    function setAuth(token, user, tenantData) {
+      state.token = token;
+      state.user = user;
+      const tenant = tenantData || state.tenant;
+      state.tenant = user ? tenant : null;
+      localStorage.setItem("token", token || "");
+      localStorage.setItem("user", JSON.stringify(user || null));
+      localStorage.setItem("tenant", JSON.stringify(state.tenant || null));
+      document.getElementById("auth-user").textContent = user
+        ? `${user.name} (${user.email}) - ${state.tenant ? state.tenant.slug : "tenant"}`
+        : "";
+      document.getElementById("btn-logout").classList.toggle("hidden", !user);
+      document.querySelector(".main-nav")?.classList.toggle("hidden", Boolean(user));
+
+      showPreAuthView(user ? "none" : "entry");
+
+      document.getElementById("app-view").classList.toggle("hidden", !user);
+      const isManager = Boolean(user && ["admin", "owner"].includes(user.role));
+      document.querySelectorAll(".client-tab-button.manager-only").forEach((button) => {
+        button.classList.toggle("hidden", !isManager);
+      });
+      document.querySelectorAll(".client-tab-button.participant-only").forEach((button) => {
+        button.classList.toggle("hidden", isManager);
+      });
+      showClientWorkspaceTab(isManager ? "connect" : "raffles");
+
+      if (!user && state.pixPollTimer) {
+        clearInterval(state.pixPollTimer);
+        state.pixPollTimer = null;
+      }
+    }
+
+    function fmtMoney(v) {
+      return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    }
+
+    function typeLabel(type, totalNumbers) {
+      if (type === "BICHO_25") return "Jogo do Bicho 1-25";
+      if (type === "NUMERICA_100") return "Numerica 1-100";
+      return `Personalizada 1-${totalNumbers || 1000}`;
+    }
+
+    function firstMedia(product) {
+      return (product.media && product.media[0]) || null;
+    }
+
+    function renderRaffles() {
+      const container = document.getElementById("raffles-list");
+      container.innerHTML = "";
+      const openCount = state.raffles.filter((raffle) => raffle.status === "ABERTA").length;
+      const closedCount = state.raffles.filter((raffle) => raffle.status === "ENCERRADA").length;
+      const openTab = document.getElementById("tab-raffles-open");
+      const closedTab = document.getElementById("tab-raffles-closed");
+      if (openTab) openTab.textContent = `Rifas abertas (${openCount})`;
+      if (closedTab) closedTab.textContent = `Rifas encerradas (${closedCount})`;
+
+      let raffles = state.raffles;
+      const heading = document.getElementById("raffles-heading");
+      const description = document.getElementById("raffles-description");
+      if (state.raffleView === "raffles-open") {
+        raffles = state.raffles.filter((raffle) => raffle.status === "ABERTA");
+        if (heading) heading.textContent = "Rifas abertas";
+        if (description) description.textContent = "Acompanhe as campanhas que estão recebendo participantes.";
+      } else if (state.raffleView === "raffles-closed") {
+        raffles = state.raffles.filter((raffle) => raffle.status === "ENCERRADA");
+        if (heading) heading.textContent = "Rifas encerradas";
+        if (description) description.textContent = "Consulte resultados, ganhadores e etiquetas de envio.";
+      } else {
+        if (heading) heading.textContent = "Rifas";
+        if (description) description.textContent = "Acompanhe as rifas disponíveis e consulte seus detalhes.";
+      }
+
+      if (!raffles.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty-raffles";
+        empty.textContent = state.raffleView === "raffles-closed"
+          ? "Nenhuma rifa encerrada até o momento."
+          : "Nenhuma rifa aberta no momento.";
+        container.appendChild(empty);
+        return;
+      }
+
+      raffles.forEach((r) => {
+        const el = document.createElement("div");
+        el.className = "raffle-card";
+        const media = firstMedia(r.product);
+        const sold = r.soldCount || 0;
+        const available = r.totalNumbers - sold;
+        const mediaHtml = media
+          ? (media.type === "video"
+              ? `<video class=\"media-cover\" src=\"${media.url}\" muted></video>`
+              : `<img class=\"media-cover\" src=\"${media.url}\" alt=\"${r.title}\">`)
+          : `<div class=\"media-cover\"></div>`;
+        el.innerHTML = `${mediaHtml}
+          <div class="card-body">
+            <span class="badge">${typeLabel(r.type, r.totalNumbers)}</span>
+            <h3>${r.title}</h3>
+            <p class="muted">${r.description}</p>
+            <p><strong>${fmtMoney(r.pricePerNumber)}</strong> por numero</p>
+            <p class="muted">Vendidos: ${sold} | Disponiveis: ${available}</p>
+            <p class="muted">Status: ${r.status}</p>
+          </div>
+        `;
+        if (state.user && ["admin", "owner"].includes(state.user.role)) {
+          const shareButton = document.createElement("button");
+          shareButton.type = "button";
+          shareButton.className = "raffle-share-button";
+          shareButton.textContent = "Copiar link para compartilhar";
+          shareButton.onclick = async (event) => {
+            event.stopPropagation();
+            const url = buildRaffleShareUrl(r.id);
+            try {
+              await navigator.clipboard.writeText(url);
+              shareButton.textContent = "Link copiado";
+              shareButton.classList.add("copied");
+            } catch (_) {
+              const temporary = document.createElement("textarea");
+              temporary.value = url;
+              temporary.style.position = "fixed";
+              temporary.style.opacity = "0";
+              document.body.append(temporary);
+              temporary.select();
+              document.execCommand("copy");
+              temporary.remove();
+              shareButton.textContent = "Link copiado";
+              shareButton.classList.add("copied");
+            }
+            window.setTimeout(() => {
+              shareButton.textContent = "Copiar link para compartilhar";
+              shareButton.classList.remove("copied");
+            }, 2200);
+          };
+          el.querySelector(".card-body").append(shareButton);
+        }
+        el.onclick = () => openRaffle(r.id);
+        container.appendChild(el);
+      });
+    }
+
+    function renderWinners(winners) {
+      if (!winners || !winners.length) return "";
+      const maskedPhone = (raw) => {
+        if (String(raw || "").includes("*")) return String(raw);
+        const digits = String(raw || "").replace(/\D/g, "");
+        if (!digits) return "telefone não informado";
+        if (digits.length >= 10) return `(${digits.slice(0, 2)}) *****-${digits.slice(-4)}`;
+        return `*****-${digits.slice(-4)}`;
+      };
+      return `
+        <div class="winners">
+          <h3>Resultado da Rifa</h3>
+          ${winners.map((w) => `
+            <div class="winner-row">
+              <p>
+                <strong>${w.place}º lugar:</strong>
+                número ${w.number}
+                ${w.user ? `— ${w.user.name} — ${maskedPhone(w.user.phone)}` : "— sem comprador"}
+              </p>
+              ${w.user && state.user && ["admin", "owner"].includes(state.user.role) ? `
+                <button class="shipping-label-button" type="button" data-shipping-place="${w.place}">Gerar etiqueta PDF</button>
+              ` : ""}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function drawExplanation(raffle) {
+      if (raffle.drawSource) {
+        const date = raffle.drawAt ? new Date(raffle.drawAt).toLocaleString("pt-BR") : "data não informada";
+        return `Esta rifa foi encerrada em ${date}. Método: ${raffle.drawSource}.`;
+      }
+      if (raffle.type === "BICHO_25") {
+        return "Ao completar os 25 números, o organizador informa o resultado oficial do Jogo do Bicho RJ. Em um encerramento antecipado, o sistema sorteia aleatoriamente somente entre os números pagos.";
+      }
+      return "Quando todos os números forem pagos, o sistema encerra a rifa automaticamente e sorteia números distintos entre os participantes. Se houver encerramento antecipado, somente os números pagos participam.";
+    }
+
+    function renderDetail() {
+      const r = state.currentRaffle;
+      const root = document.getElementById("raffle-detail");
+      if (!r) {
+        root.classList.add("hidden");
+        return;
+      }
+      root.classList.remove("hidden");
+
+      const media = (r.product && r.product.media) || [];
+      const mediaHtml = media.map((m) => {
+        if (m.type === "video") {
+          return `<video controls src="${m.url}"></video>`;
+        }
+        return `<img src="${m.url}" alt="media">`;
+      }).join("");
+
+      root.innerHTML = `
+        <h2>${r.title}</h2>
+        <p class="muted">${r.description}</p>
+        <p><span class="badge">${typeLabel(r.type, r.totalNumbers)}</span> <span class="badge">${r.status}</span></p>
+        <div class="media-grid">${mediaHtml || "<div class='muted'>Sem midia.</div>"}</div>
+        <p><strong>Preco:</strong> ${fmtMoney(r.pricePerNumber)}</p>
+        <p><strong>Desconto:</strong> ${Number(r.discountPercent ?? 10)}% a partir de 3 números</p>
+        <p><strong>Total:</strong> ${r.totalNumbers} numeros</p>
+        <p><strong>Ganhadores:</strong> ${r.winnerCount || 3}</p>
+        <p><strong>Vendidos:</strong> ${r.soldCount || 0}</p>
+        <div class="draw-info-grid">
+          <section class="draw-info-card">
+            <h3>Como é realizado o sorteio?</h3>
+            <p>${drawExplanation(r)}</p>
+            <p class="muted">A quantidade de números sorteados será igual à quantidade de ganhadores configurada nesta rifa.</p>
+          </section>
+          ${r.status === "ABERTA" && state.user && ["admin", "owner"].includes(state.user.role) ? `
+            <section class="draw-info-card draw-close-card">
+              <h3>Encerrar rifa</h3>
+              <p>Encerre sem vender todos os números. O sorteio será realizado aleatoriamente somente entre os números com pagamento confirmado.</p>
+              <p class="muted">Não é possível encerrar com PIX pendente ou com menos números pagos que a quantidade de ganhadores.</p>
+              <button id="btn-close-raffle" class="draw-close-button" type="button">Encerrar rifa e sortear</button>
+            </section>
+          ` : ""}
+        </div>
+        ${r.status === "ABERTA" && state.user && ["admin", "owner"].includes(state.user.role) ? `
+          <dialog id="close-raffle-dialog" class="confirmation-dialog">
+            <form method="dialog">
+              <h3>Confirmar encerramento</h3>
+              <p>Esta ação é definitiva. O sorteio considerará somente os números com pagamento confirmado.</p>
+              <label for="close-raffle-password">Senha do organizador</label>
+              <input id="close-raffle-password" type="password" autocomplete="current-password" required>
+              <small id="close-raffle-error" class="confirmation-error" role="alert"></small>
+              <div class="dialog-actions">
+                <button class="alt" type="submit">Cancelar</button>
+                <button id="btn-confirm-close-raffle" class="draw-close-button" type="button">Confirmar e sortear</button>
+              </div>
+            </form>
+          </dialog>
+        ` : ""}
+        ${renderWinners(r.winners)}
+        <h3>Escolha seus numeros</h3>
+        <div id="numbers" class="numbers"></div>
+        <div class="checkout-actions single">
+          <button id="btn-open-payment">Pagar numeros selecionados</button>
+        </div>
+        <div id="payment-choice-panel" class="panel hidden" style="margin-top: 12px;">
+          <h3>Pagamento via PIX</h3>
+          <p class="muted">A cobrança será gerada na conta conectada pelo <strong>ORGANIZADOR DA RIFA</strong>. A confirmação ocorre automaticamente.</p>
+          <div id="payment-selection-summary" class="checkout-summary"></div>
+          <div class="checkout-actions">
+            <button id="btn-cancel-payment-choice" class="alt" type="button">Voltar</button>
+            <button id="btn-confirm-checkout" type="button">Gerar QR Code e pagar</button>
+          </div>
+        </div>
+        <div id="pix-status" class="status-note hidden"></div>
+        <div id="pix-failure-reason" class="pix-failure-reason hidden" role="alert"></div>
+
+        ${r.type === "BICHO_25" && state.user && ["admin", "owner"].includes(state.user.role) ? `
+          <div class="panel" style="margin-top:12px;">
+            <h3>Informar Resultado Jogo do Bicho RJ</h3>
+            <p class="muted">Somente apos 25 numeros pagos.</p>
+            <input id="bicho-source" placeholder="Fonte do resultado (ex.: banca X, data)">
+            <div class="grid3">
+              ${Array.from({ length: r.winnerCount || 3 }, (_, index) => `
+                <input class="bicho-result" type="number" min="1" max="25" placeholder="${index + 1}º lugar">
+              `).join("")}
+            </div>
+            <button id="btn-bicho-draw" class="alt">Fechar rifa com resultado oficial</button>
+          </div>
+        ` : ""}
+      `;
+
+      renderNumbers();
+      mountStripeCardElement();
+      updatePaymentMethodUI();
+      document.getElementById("btn-open-payment").onclick = openPaymentSelection;
+      document.getElementById("btn-cancel-payment-choice").onclick = closePaymentSelection;
+      document.getElementById("btn-confirm-checkout").onclick = checkout;
+      const bichoBtn = document.getElementById("btn-bicho-draw");
+      if (bichoBtn) bichoBtn.onclick = submitBichoDraw;
+      const closeRaffleBtn = document.getElementById("btn-close-raffle");
+      if (closeRaffleBtn) closeRaffleBtn.onclick = openCloseRaffleConfirmation;
+      const confirmCloseRaffleBtn = document.getElementById("btn-confirm-close-raffle");
+      if (confirmCloseRaffleBtn) confirmCloseRaffleBtn.onclick = closeRaffleEarly;
+      document.querySelectorAll("[data-shipping-place]").forEach((button) => {
+        button.onclick = () => downloadShippingLabel(r.id, button.dataset.shippingPlace, button);
+      });
+    }
+
+    function openCloseRaffleConfirmation() {
+      const dialog = document.getElementById("close-raffle-dialog");
+      const password = document.getElementById("close-raffle-password");
+      const error = document.getElementById("close-raffle-error");
+      if (!dialog) return;
+      if (password) password.value = "";
+      if (error) error.textContent = "";
+      dialog.showModal();
+      window.setTimeout(() => password?.focus(), 0);
+    }
+
+    async function closeRaffleEarly() {
+      if (!state.currentRaffle) return;
+      const passwordInput = document.getElementById("close-raffle-password");
+      const errorNode = document.getElementById("close-raffle-error");
+      const password = passwordInput?.value || "";
+      if (!password) {
+        if (errorNode) errorNode.textContent = "Digite sua senha para confirmar.";
+        passwordInput?.focus();
+        return;
+      }
+
+      const button = document.getElementById("btn-confirm-close-raffle");
+      if (button) {
+        button.disabled = true;
+        button.textContent = "Confirmando...";
+      }
+      if (errorNode) errorNode.textContent = "";
+      try {
+        await api(`/api/raffles/${state.currentRaffle.id}/close`, {
+          method: "POST",
+          body: JSON.stringify({ password }),
+        });
+        document.getElementById("close-raffle-dialog")?.close();
+        alert("Rifa encerrada e sorteio realizado com sucesso.");
+        await openRaffle(state.currentRaffle.id);
+        await loadRaffles();
+      } catch (error) {
+        if (errorNode) errorNode.textContent = error.message;
+        passwordInput?.select();
+        if (button) {
+          button.disabled = false;
+          button.textContent = "Confirmar e sortear";
+        }
+      }
+    }
+
+    async function downloadShippingLabel(raffleId, place, button) {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = "Gerando PDF...";
+      try {
+        const response = await fetch(`/api/raffles/${raffleId}/winners/${place}/shipping-label.pdf`, {
+          headers: { Authorization: `Bearer ${state.token}` },
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.error || "Não foi possível gerar a etiqueta.");
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `etiqueta-rifa-${raffleId}-${place}-lugar.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    }
+
+    function renderNumbers() {
+      const r = state.currentRaffle;
+      const sold = new Set(r.soldNumbers || []);
+      const box = document.getElementById("numbers");
+      if (!box) return;
+      box.innerHTML = "";
+
+      for (let n = 1; n <= r.totalNumbers; n += 1) {
+        const el = document.createElement("div");
+        el.className = "num";
+        const str = String(n).padStart(r.totalNumbers >= 1000 ? 4 : 3, "0");
+        el.textContent = str;
+        if (sold.has(n)) {
+          el.classList.add("off");
+        } else if (state.selectedNumbers.has(n)) {
+          el.classList.add("on");
+        }
+        el.onclick = () => {
+          if (sold.has(n) || r.status !== "ABERTA") return;
+          if (state.selectedNumbers.has(n)) state.selectedNumbers.delete(n);
+          else state.selectedNumbers.add(n);
+          renderNumbers();
+          updatePaymentMethodUI();
+        };
+        box.appendChild(el);
+      }
+    }
+
+    async function loadRaffles() {
+      state.raffles = await api("/api/raffles");
+      renderRaffles();
+    }
+
+    async function openRaffle(id) {
+      state.currentRaffle = await api(`/api/raffles/${id}`);
+      state.selectedNumbers = new Set();
+      state.paymentSelectionOpen = false;
+      renderDetail();
+      const saved = JSON.parse(sessionStorage.getItem(pixStorageKey()) || "null");
+      if (saved?.paymentId) {
+        const payment = await api(`/api/payments/${saved.paymentId}`);
+        if (payment.status === "pendente") {
+          renderPendingPix(payment);
+          await startPixStatusPolling(saved.paymentId);
+        } else {
+          sessionStorage.removeItem(pixStorageKey());
+          if (payment.status === "falhou") {
+            showPixInfo("Pagamento PIX não concluído. Os números foram liberados para nova compra.");
+            showPixFailureReason(payment.payload?.gatewayErrorMessage || "A cobrança foi recusada pelo Mercado Pago. Confira seus dados cadastrais e tente novamente.");
+          }
+        }
+      }
+    }
+
+    async function checkout() {
+      if (!state.currentRaffle) return;
+      const numbers = [...state.selectedNumbers];
+      if (!numbers.length) {
+        alert("Selecione ao menos um numero.");
+        return;
+      }
+
+      let paymentMethodId = null;
+      let paymentDetails = null;
+      try {
+        const gatewayData = await createGatewayPaymentData();
+        paymentMethodId = gatewayData.paymentMethodId;
+        paymentDetails = gatewayData.paymentDetails;
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+
+      const payload = {
+        raffleId: state.currentRaffle.id,
+        numbers,
+        method: state.paymentMethod,
+        paymentMethodId,
+        paymentDetails,
+      };
+      if (state.checkoutBusy) return;
+      state.checkoutBusy = true;
+      const button = document.getElementById("btn-confirm-checkout");
+      if (button) button.disabled = true;
+      const storageKey = pixStorageKey();
+      const selection = JSON.stringify([...numbers].sort((a, b) => a - b));
+      let attempt = JSON.parse(sessionStorage.getItem(storageKey) || "null");
+      if (!attempt || attempt.selection !== selection) {
+        attempt = { selection, key: crypto.randomUUID() };
+        sessionStorage.setItem(storageKey, JSON.stringify(attempt));
+      }
+      try {
+        const result = await api("/api/payments/checkout", {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: { "X-Idempotency-Key": attempt.key },
+        });
+        if (result.status === "pago") {
+          sessionStorage.removeItem(storageKey);
+          alert(`Pagamento aprovado. Transacao: ${result.externalId}`);
+          await openRaffle(state.currentRaffle.id);
+          await loadRaffles();
+          return;
+        }
+
+        if (result.status === "pendente") {
+          attempt.paymentId = result.paymentId;
+          sessionStorage.setItem(storageKey, JSON.stringify(attempt));
+          await openRaffle(state.currentRaffle.id);
+          renderPendingPix(result);
+          await startPixStatusPolling(result.paymentId);
+          await loadRaffles();
+          return;
+        }
+
+        sessionStorage.removeItem(storageKey);
+        alert("Pagamento nao aprovado.");
+      } catch (err) {
+        if (err.status === 409) {
+          sessionStorage.removeItem(storageKey);
+          await openRaffle(state.currentRaffle.id);
+          await loadRaffles();
+        } else if (err.status === 402 || err.status === 400) {
+          sessionStorage.removeItem(storageKey);
+          showPixInfo("Não foi possível gerar o QR Code PIX.");
+          showPixFailureReason(err.message);
+        }
+        alert(err.message);
+      } finally {
+        state.checkoutBusy = false;
+        const currentButton = document.getElementById("btn-confirm-checkout");
+        if (currentButton) currentButton.disabled = false;
+      }
+    }
+
+    async function submitBichoDraw() {
+      if (!state.currentRaffle) return;
+      try {
+        await api(`/api/raffles/${state.currentRaffle.id}/draw/bicho-rj`, {
+          method: "POST",
+          body: JSON.stringify({
+            results: [...document.querySelectorAll(".bicho-result")].map((input) => Number(input.value)),
+            source: document.getElementById("bicho-source").value,
+          }),
+        });
+        alert("Resultado aplicado com sucesso.");
+        await openRaffle(state.currentRaffle.id);
+        await loadRaffles();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function uploadMedia(files) {
+      if (!files.length) return [];
+      const data = new FormData();
+      files.forEach((f) => data.append("files", f));
+      const headers = {};
+      if (state.token) headers.Authorization = `Bearer ${state.token}`;
+      const response = await fetch("/api/uploads", { method: "POST", headers, body: data });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error || "Falha no upload");
+      return body.media || [];
+    }
+
+    async function createRaffleFlow() {
+      const title = document.getElementById("prod-title").value.trim();
+      const description = document.getElementById("prod-desc").value.trim();
+      const files = [...document.getElementById("prod-files").files];
+      const raffleType = document.getElementById("raffle-type").value;
+      const totalNumbers = raffleType === "NUMERICA_1000"
+        ? Number(document.getElementById("raffle-total-numbers").value)
+        : undefined;
+      const raffleTitle = document.getElementById("raffle-title").value.trim();
+      const raffleDesc = document.getElementById("raffle-desc").value.trim();
+      const rafflePrice = Number(document.getElementById("raffle-price").value);
+      const discountPercent = Number(document.getElementById("raffle-discount-percent").value);
+      const winnerCount = Number(document.getElementById("raffle-winner-count").value);
+
+      if (!title || !description || !raffleTitle || !raffleDesc || !rafflePrice) {
+        alert("Preencha todos os campos.");
+        return;
+      }
+      if (raffleType === "NUMERICA_1000" && (!Number.isInteger(totalNumbers) || totalNumbers < 1 || totalNumbers > 1000)) {
+        alert("Escolha uma quantidade de números entre 1 e 1000.");
+        return;
+      }
+      if (!Number.isInteger(winnerCount) || winnerCount < 1 || winnerCount > 5) {
+        alert("Escolha uma quantidade de ganhadores entre 1 e 5.");
+        return;
+      }
+      if (!Number.isFinite(discountPercent) || discountPercent < 0 || discountPercent > 100) {
+        alert("Escolha um desconto entre 0% e 100%.");
+        return;
+      }
+      if (raffleType === "NUMERICA_1000" && winnerCount > totalNumbers) {
+        alert("A quantidade de ganhadores não pode exceder a quantidade de números.");
+        return;
+      }
+
+      try {
+        const media = await uploadMedia(files);
+        const product = await api("/api/products", {
+          method: "POST",
+          body: JSON.stringify({ title, description, media }),
+        });
+
+        const raffle = await api("/api/raffles", {
+          method: "POST",
+          body: JSON.stringify({
+            productId: product.id,
+            type: raffleType,
+            title: raffleTitle,
+            description: raffleDesc,
+            pricePerNumber: rafflePrice,
+            discountPercent,
+            totalNumbers,
+            winnerCount,
+          }),
+        });
+
+        state.createdRaffleId = raffle.id;
+        updateRaffleShareUrl(raffle.id);
+
+        alert("Produto e rifa criados.");
+        document.getElementById("prod-title").value = "";
+        document.getElementById("prod-desc").value = "";
+        document.getElementById("prod-files").value = "";
+        document.getElementById("raffle-title").value = "";
+        document.getElementById("raffle-desc").value = "";
+        document.getElementById("raffle-price").value = "";
+        document.getElementById("raffle-discount-percent").value = "10";
+        document.getElementById("raffle-total-numbers").value = "1000";
+        document.getElementById("raffle-winner-count").value = "3";
+        await loadRaffles();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function login(prefix) {
+      const tenantSlug = prefix === "user" && state.sharedTenantSlug
+        ? state.sharedTenantSlug
+        : document.getElementById(`${prefix}-login-tenant`).value;
+      const email = document.getElementById(`${prefix}-login-email`).value;
+      const password = document.getElementById(`${prefix}-login-pass`).value;
+      try {
+        const data = await api("/api/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ tenantSlug, email, password }),
+        });
+        setAuth(data.token, data.user, data.tenant || null);
+        await loadPaymentConfig();
+        await loadRaffles();
+        await openSharedRaffleAfterAuth();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function register(prefix) {
+      const tenantSlug = prefix === "user" && state.sharedTenantSlug
+        ? state.sharedTenantSlug
+        : document.getElementById(`${prefix}-reg-tenant`).value;
+      const name = document.getElementById(`${prefix}-reg-name`).value;
+      const phone = document.getElementById(`${prefix}-reg-phone`).value;
+      const taxId = document.getElementById(`${prefix}-reg-tax-id`)?.value || "";
+      const email = document.getElementById(`${prefix}-reg-email`).value;
+      const password = document.getElementById(`${prefix}-reg-pass`).value;
+      const addressPostalCode = document.getElementById(`${prefix}-reg-postal-code`)?.value || "";
+      const addressStreet = document.getElementById(`${prefix}-reg-street`)?.value || "";
+      const addressNumber = document.getElementById(`${prefix}-reg-number`)?.value || "";
+      const addressComplement = document.getElementById(`${prefix}-reg-complement`)?.value || "";
+      const addressDistrict = document.getElementById(`${prefix}-reg-district`)?.value || "";
+      const addressCity = document.getElementById(`${prefix}-reg-city`)?.value || "";
+      const addressState = document.getElementById(`${prefix}-reg-state`)?.value || "";
+      const adminTokenEl = document.getElementById(`${prefix}-reg-token`);
+      const adminToken = adminTokenEl ? adminTokenEl.value : "";
+      try {
+        const data = await api("/api/auth/register", {
+          method: "POST",
+          body: JSON.stringify({
+            tenantSlug, name, phone, taxId, email, password, adminToken,
+            addressPostalCode, addressStreet, addressNumber, addressComplement,
+            addressDistrict, addressCity, addressState,
+          }),
+        });
+        setAuth(data.token, data.user, data.tenant || null);
+        await loadPaymentConfig();
+        await loadRaffles();
+        await openSharedRaffleAfterAuth();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function connectStripeTenant() {
+      const button = document.getElementById("btn-stripe-connect");
+      try {
+        setMercadoPagoAuthorizationProgress(10, "Verificando a configuração do AppRifa...");
+        button.disabled = true;
+        if (["mock", "mercadopago"].includes(state.paymentConfig?.provider)
+          && !state.paymentConfig?.mercadoPagoEnabled) {
+          const missing = state.paymentConfig?.mercadoPagoSetupMissing?.join(", ") || "credenciais OAuth";
+          throw new Error(`Não é possível iniciar: configure ${missing} no servidor.`);
+        }
+        setMercadoPagoAuthorizationProgress(30, "Validando os dados de recebimento...");
+        const endpoint = ["mock", "mercadopago"].includes(state.paymentConfig?.provider)
+          ? "/api/payments/mercadopago/connect/start"
+          : "/api/payments/stripe/connect/start";
+        const data = await api(endpoint);
+        if (!data.url) throw new Error("URL de conexão não recebida");
+        setMercadoPagoAuthorizationProgress(65, "Autorização preparada. Redirecionando ao Mercado Pago...");
+        sessionStorage.setItem("mercadopagoAuthorizationPending", "1");
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        window.location.href = data.url;
+      } catch (err) {
+        setMercadoPagoAuthorizationProgress(0, `Falha: ${err.message}`, true);
+        button.disabled = false;
+      }
+    }
+
+    function setMercadoPagoAuthorizationProgress(percent, message, failed = false) {
+      const container = document.getElementById("mp-authorization-progress");
+      const bar = document.getElementById("mp-authorization-progress-bar");
+      const text = document.getElementById("mp-authorization-progress-text");
+      container.classList.remove("hidden");
+      bar.value = percent;
+      text.textContent = `${percent}% — ${message}`;
+      text.style.color = failed ? "#b42318" : "";
+    }
+
+    function showMercadoPagoCallbackStatus() {
+      const params = new URLSearchParams(window.location.search);
+      const result = params.get("mercadopago");
+      if (!result) return;
+      showClientWorkspaceTab("connect");
+      if (result === "connected") {
+        sessionStorage.removeItem("mercadopagoAuthorizationPending");
+        setMercadoPagoAuthorizationProgress(100, "Conta Mercado Pago autorizada e validada com sucesso.");
+      } else {
+        const messages = {
+          authorization_denied: "A autorização foi cancelada ou negada no Mercado Pago.",
+          missing_parameters: "O Mercado Pago não retornou todos os dados necessários.",
+          invalid_state: "A tentativa expirou ou já foi utilizada. Inicie novamente.",
+          account_validation_failed: "Não foi possível validar a conta autorizada.",
+        };
+        sessionStorage.removeItem("mercadopagoAuthorizationPending");
+        setMercadoPagoAuthorizationProgress(0, messages[params.get("reason")] || "A autorização não foi concluída.", true);
+      }
+      history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    function logout() {
+      setAuth("", null);
+      state.raffles = [];
+      state.currentRaffle = null;
+      state.paymentConfig = null;
+      state.tenant = null;
+      state.selectedNumbers.clear();
+      document.getElementById("raffles-list").innerHTML = "";
+      document.getElementById("raffle-detail").classList.add("hidden");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("tenant");
+    }
+
+    document.getElementById("btn-open-user-auth").onclick = () => showPreAuthView("user");
+    document.getElementById("btn-open-admin-auth").onclick = () => showPreAuthView("admin");
+    document.querySelectorAll(".nav-link[data-nav-target]").forEach((link) => {
+      link.onclick = () => showPreAuthView(link.dataset.navTarget);
+    });
+    document.getElementById("btn-back-user-entry").onclick = () => showPreAuthView("entry");
+    document.getElementById("btn-back-admin-entry").onclick = () => showPreAuthView("entry");
+
+    document.getElementById("btn-user-login").onclick = () => login("user");
+    document.getElementById("btn-admin-login").onclick = () => login("admin");
+    document.getElementById("btn-show-user-register").onclick = () => showParticipantAuthPanel("register");
+    document.getElementById("btn-show-user-login").onclick = () => showParticipantAuthPanel("login");
+    document.getElementById("btn-user-register").onclick = () => register("user");
+    document.getElementById("btn-create-raffle").onclick = createRaffleFlow;
+    document.getElementById("btn-copy-raffle-url").onclick = copyRaffleShareUrl;
+    document.getElementById("btn-stripe-connect").onclick = connectStripeTenant;
+    document.getElementById("btn-save-mp-profile").onclick = saveMercadoPagoReceivingProfile;
+    document.getElementById("account-form").addEventListener("submit", saveAccount);
+    document.getElementById("btn-logout").onclick = logout;
+    document.getElementById("raffle-type").addEventListener("change", updateCustomRaffleRange);
+    document.querySelectorAll("[data-client-view]").forEach((button) => {
+      button.onclick = () => showClientWorkspaceTab(button.dataset.clientView);
+    });
+    initEntryCardAccessibility();
+    updateCustomRaffleRange();
+
+    async function init() {
+      setAuth(state.token, state.user, state.tenant);
+      applySharedLink();
+      if (state.user && state.token) {
+        try {
+          await loadPaymentConfig();
+          await loadRaffles();
+          await openSharedRaffleAfterAuth();
+          showMercadoPagoCallbackStatus();
+        } catch (err) {
+          alert("Sessao expirada, faca login novamente.");
+          logout();
+        }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+name: CI/CD
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: Deploy the tested image to the SSH production server
+        type: boolean
+        default: false
+      backup_confirmed:
+        description: Database backup and migration compatibility have been reviewed
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    name: Syntax, PIX and security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Validate deployment request
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy && !inputs.backup_confirmed
+        run: |
+          echo 'Review the database backup and migration compatibility, then select backup_confirmed.' >&2
+          exit 1
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Check JavaScript and shell syntax
+        shell: bash
+        run: |
+          node --check server.js
+          find lib migrations public scripts tests -type f -name '*.js' -print0 | xargs -0 -n 1 node --check
+          bash -n scripts/test-ci.sh scripts/deploy-ssh.sh
+          sh -n scripts/ci-tests-in-container.sh
+      - run: npm run test:pix
+      - run: npm audit --omit=dev --audit-level=high
+
+  image:
+    name: Docker and isolated integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: quality
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Build and test with disposable MySQL
+        env:
+          CI_IMAGE_ARCHIVE: ${{ runner.temp }}/apprifa-image.tar
+        run: bash scripts/test-ci.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tested-image
+          path: ${{ runner.temp }}/apprifa-image.tar
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
+
+  publish:
+    name: Publish tested image to GHCR
+    needs: image
+    if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.publish.outputs.image }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tested-image
+          path: ${{ runner.temp }}
+      - name: Publish the exact tested image
+        id: publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
+          REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.sha }}
+          ARCHIVE: ${{ runner.temp }}/apprifa-image.tar
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_image=$(docker load -i "$ARCHIVE" | sed -n 's/^Loaded image: //p')
+          test -n "$source_image"
+          image="ghcr.io/${REPOSITORY,,}"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          docker tag "$source_image" "$image:sha-$COMMIT_SHA"
+          docker push "$image:sha-$COMMIT_SHA"
+          digest_ref=$(docker inspect --format '{{index .RepoDigests 0}}' "$image:sha-$COMMIT_SHA")
+          [[ "$digest_ref" == "$image@sha256:"* ]]
+          printf 'image=%s\n' "$digest_ref" >> "$GITHUB_OUTPUT"
+          printf 'Published `%s`\n' "$digest_ref" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy production over SSH
+    needs: publish
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy && inputs.backup_confirmed && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: [self-hosted, linux, x64, apprifa-deploy]
+    timeout-minutes: 10
+    environment: production
+    concurrency:
+      group: apprifa-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Deploy using a verified SSH host key
+        env:
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          SSH_HOST: ${{ vars.SSH_HOST }}
+          SSH_USER: ${{ vars.SSH_USER }}
+          SSH_PORT: ${{ vars.SSH_PORT || '22' }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+          IMAGE_REF: ${{ needs.publish.outputs.image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS"
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
+          [[ "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
+          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]]
+          [[ "$IMAGE_REF" =~ ^ghcr\.io/[a-z0-9_./-]+@sha256:[a-f0-9]{64}$ ]]
+          ssh_dir=$(mktemp -d)
+          trap 'rm -rf "$ssh_dir"' EXIT
+          chmod 700 "$ssh_dir"
+          printf '%s\n' "$SSH_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          chmod 600 "$ssh_dir/key" "$ssh_dir/known_hosts"
+          ssh -i "$ssh_dir/key" -p "$SSH_PORT" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$ssh_dir/known_hosts" -o ConnectTimeout=15 \
+            "$SSH_USER@$SSH_HOST" "bash -s -- '$DEPLOY_PATH' '$IMAGE_REF'" < scripts/deploy-ssh.sh

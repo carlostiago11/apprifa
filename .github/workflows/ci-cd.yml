@@ -141,12 +141,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS"
-          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]]
-          [[ "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]]
-          [[ "$SSH_PORT" =~ ^[0-9]+$ ]]
-          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]]
-          [[ "$IMAGE_REF" =~ ^ghcr\.io/[a-z0-9_./-]+@sha256:[a-f0-9]{64}$ ]]
+
+           fail() { echo "::error::$1"; exit 1; }
+
+           test -n "$SSH_KEY" || fail "SSH_PRIVATE_KEY vazio"
+           test -n "$SSH_KNOWN_HOSTS" || fail "SSH_KNOWN_HOSTS vazio"
+
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.-]*$ ]] \
+          || fail "SSH_HOST inválido"
+
+          [[ "$SSH_USER" =~ ^[a-z_][a-z0-9_-]*$ ]] \
+          || fail "SSH_USER inválido"
+
+          [[ "$SSH_PORT" =~ ^[0-9]+$ ]] \
+          || fail "SSH_PORT inválido"
+
+          [[ "$DEPLOY_PATH" =~ ^/[a-zA-Z0-9_./-]+$ ]] \
+          || fail "DEPLOY_PATH inválido"
+
+          [[ "$IMAGE_REF" =~ ^ghcr\.io/[a-z0-9_./-]+@sha256:[a-f0-9]{64}$ ]] \
+          || fail "IMAGE_REF inválida"
+
+          echo "Validações concluídas; iniciando configuração SSH"
           ssh_dir=$(mktemp -d)
           trap 'rm -rf "$ssh_dir"' EXIT
           chmod 700 "$ssh_dir"
